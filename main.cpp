@@ -16,16 +16,6 @@ void print_vector(vector<int> v)
     cout << endl;
 }
 
-lli nCr(lli n, lli r)
-{
-    if (n < r)
-        return 0;
-    lli sum = 1;
-    for (int i = 1; i <= r; i++)
-        sum = sum * (n - r + i) / i;
-    return sum;
-}
-
 void generate_Y_matrix_helper(int n, vector<int> &curr, Matrix<int> &Y)
 {
     if (n == 1)
@@ -93,7 +83,6 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
                     b.push_back(x[j] * y[i]);
                 }
             }
-            B.push_back(b);
         }
         p++;
     }
