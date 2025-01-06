@@ -8,6 +8,7 @@ using namespace std;
 
 string X_MATRIX_FOLDER = "X_matrix/";
 int no_of_combinations = 0;
+int unique_sol_sys = 0;
 
 void print_vector(vector<int> v)
 {
@@ -42,8 +43,29 @@ void generate_Y_matrix(int n, Matrix<int> &Y)
     vector<int> curr;
     generate_Y_matrix_helper(n, curr, Y);
 
-    cout << "Generated Matrix Y successfully!!\n";
+    cout << "Generated Matrix Y successfully!!" << endl;
     return;
+}
+
+bool isRowLinerlyIndependent(Matrix<int> B, vector<int> b)
+{
+    for (int i = 0; i < B.row(); i++)
+    {
+        bool isEqual = true;
+        bool isNegationEqual = true;
+        for (int j = 0; j < B.col(); j++)
+        {
+            if (B[i][j] != b[j])
+                isEqual = false;
+            if (B[i][j] != -1 * b[j])
+                isNegationEqual = false;
+        }
+        if (isEqual || isNegationEqual)
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
@@ -83,12 +105,16 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
                     b.push_back(x[j] * y[i]);
                 }
             }
+            if (isRowLinerlyIndependent(B, b))
+            {
+                B.push_back(b);
+            }
         }
         p++;
     }
     file.close();
 
-    cout << "Generated Matrix B successfully!!\n";
+    cout << "Generated Matrix B successfully!!" << endl;
     return;
 }
 
@@ -97,6 +123,11 @@ void generate_A_matrix_helper(int n, int Idx, Matrix<int> B, Matrix<int> A)
     if (A.row() == n * n)
     {
         no_of_combinations++;
+        // A.printToStdOut();
+        if (A.determinant() != 0)
+        {
+            unique_sol_sys++;
+        }
         return;
     }
 
@@ -112,6 +143,7 @@ void generate_A_matrix(int n, Matrix<int> B)
 {
     Matrix<int> A(0, n * n);
     generate_A_matrix_helper(n, 0, B, A);
+    cout << "Generated Matrices A successfully!!" << endl;
 }
 
 int main()
@@ -121,18 +153,23 @@ int main()
         int no_of_variables = 4;
         int n = sqrt(no_of_variables); // n*n = no_of_variables
 
+        cout << "Generating matrix Y..." << endl;
         Matrix<int> Y(0, n); // Y -> 2^(n-1) x (n)
         generate_Y_matrix(n, Y);
         // cout << "Matrix Y::" << endl;
         // Y.printToStdOut();
 
+        cout << "Generating matrix B..." << endl;
         Matrix<int> B(0, no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
         generate_B_matrix(n, Y, B);
         cout << "Matrix B::" << endl;
         B.printToStdOut();
 
+        cout << "Generating matrices A..." << endl;
         generate_A_matrix(n, B);
-        cout << "No. of combinations:: " << no_of_combinations << endl;
+        cout << "No. of combinations(when B has linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << endl;
+        cout << "No. of combinations(when B has linearly independent rows):: " << no_of_combinations << endl;
+        cout << "No. of systems with unique solution:: " << unique_sol_sys << endl;
     }
     catch (const std::exception &e)
     {

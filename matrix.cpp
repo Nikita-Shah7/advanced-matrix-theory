@@ -798,7 +798,7 @@ void Matrix<numericalType>::setToZeroMatrix()
 // }
 
 template<typename numericalType>
-void Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const 
+int Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const 
 {
 	if (!isSquare())
 		throw std::runtime_error("Cannot perform LU decomposition on non-square matrix!");
@@ -809,20 +809,39 @@ void Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, Matrix<num
 
 	L.setToIdentity(); // L should start as the identity matrix
 
-	for (unsigned i = 0; i < n; ++i) 
+	int rowSwaps = 0;
+	for (unsigned i = 0; i < n; ++i)
 	{
-		for (unsigned j = i + 1; j < n; ++j) 
+		if (U[i][i] == 0)
 		{
-			if (U[i][i] == 0)
-				std::runtime_error("Divison by 0 in LU decomposition!");
-
+			// Perform row swap
+			bool swapped = false;
+			for (unsigned j = i + 1; j < n; ++j)
+			{
+				if (U[j][i] != 0)
+				{
+					std::swap(U.matrix[i], U.matrix[j]);
+					std::swap(L.matrix[i], L.matrix[j]);
+					rowSwaps++;
+					swapped = true;
+					break;
+				}
+			}
+			if (!swapped) {
+				// throw std::runtime_error("Matrix is singular, determinant is 0!");
+				return -1;
+			}
+		}
+		for (unsigned j = i + 1; j < n; ++j)
+		{
 			numericalType factor = U[j][i] / U[i][i];
 			L[j][i] = factor; // Set the factor in L
 
-			for (unsigned k = i; k < n; ++k) 
+			for (unsigned k = i; k < n; ++k)
 				U[j][k] -= factor * U[i][k]; // Update U by subtracting the factor times the pivot row
 		}
 	}
+	return rowSwaps;
 }
 
 template<typename numericalType>
@@ -1112,7 +1131,7 @@ numericalType Matrix<numericalType>::determinant() const
 		throw std::runtime_error("Determinant can only be calculated for square matrices.");
 	
 	// If the matirx is an upper triangle, then the product of the diagonal elements is the determinant
-	if (isUpperTriangle())
+	if (isUpperTriangle() || isLowerTriangle())
 	{
 		unsigned cntr = 0;
 		numericalType det = 1;
@@ -1129,14 +1148,20 @@ numericalType Matrix<numericalType>::determinant() const
 	}
 
 	Matrix<numericalType> L, U;
-	luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
+	int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
 
+	if (rowSwaps == 0)
+		return 0;
 	numericalType det = 1;
 #ifdef _USING_OMP_
 #pragma omp parallel for redustion(*:det)
 #endif
 	for (size_t i = 0; i < U.row(); ++i) 
 		det *= U[i][i];
+
+	// Adjust determinant for row swaps
+    if (rowSwaps % 2 != 0)
+        det = -det;
 
 	return det;
 }

@@ -863,7 +863,7 @@ public:
 	// - L: Reference to a Matrix object where the L matrix will be stored.
 	// - U: Reference to a Matrix object where the U matrix will be stored.
 	// Returns: None. The L and U matrices are output parameters that are filled by the function.
-	void luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const;
+	int luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const;
 
 	// organizeDecreasing: Reorganizes the matrix rows so that they are in decreasing order based on a specified criterion.
 	// Parameters: None.
