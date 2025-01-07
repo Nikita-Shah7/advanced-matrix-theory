@@ -798,7 +798,7 @@ void Matrix<numericalType>::setToZeroMatrix()
 // }
 
 template<typename numericalType>
-int Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const 
+long long int Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const 
 {
 	if (!isSquare())
 		throw std::runtime_error("Cannot perform LU decomposition on non-square matrix!");
@@ -1148,7 +1148,7 @@ numericalType Matrix<numericalType>::determinant() const
 	}
 
 	Matrix<numericalType> L, U;
-	int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
+	long long int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
 
 	if (rowSwaps == 0)
 		return 0;
