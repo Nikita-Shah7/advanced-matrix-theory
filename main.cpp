@@ -45,27 +45,6 @@ void generate_Y_matrix(int n, Matrix<int> &Y)
     return;
 }
 
-bool is_row_linerly_independent(Matrix<int> B, vector<int> b)
-{
-    for (long long int i = 0; i < B.row(); i++)
-    {
-        bool isEqual = true;
-        bool isNegationEqual = true;
-        for (long long int j = 0; j < B.col(); j++)
-        {
-            if (B[i][j] != b[j])
-                isEqual = false;
-            if (B[i][j] != -1 * b[j])
-                isNegationEqual = false;
-        }
-        if (isEqual || isNegationEqual)
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
 void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
 {
     string filename = X_MATRIX_FOLDER + "X_" + to_string(n) + ".txt";
@@ -148,54 +127,7 @@ Matrix<long double> matrix_augmentation(Matrix<int> A)
     return augmented;
 }
 
-// Matrix<long double> solve_for_A(Matrix<int> A)
-// {
-//     Matrix<long double> augmented_matrix_A = matrix_augmentation(A); // At = 1 => [A|1] is augmented matrix
-//     augmented_matrix_A.printToStdOut();
-//     // augmented_matrix_A.gaussJordanElimination();
-
-//     Matrix<long double> t(A.row(), 1);
-//     for (size_t i = 0; i < A.row(); i++)
-//         t[i][0] = augmented_matrix_A[i][A.col()];
-
-//     return t;
-// }
-
-// Matrix<long double> solveGauss(Matrix<int> A)
-// {
-//     size_t n = A.row();
-//     Matrix<long double> augmented = matrix_augmentation(A);
-
-//     // Forward Elimination
-//     for (size_t i = 0; i < n; ++i)
-//     {
-//         // Pivot selection
-//         for (size_t k = i + 1; k < n; ++k)
-//         {
-//             long double factor = A[k][i] / A[i][i];
-//             for (size_t j = i; j <= n; ++j)
-//             {
-//                 augmented[k][j] -= factor * augmented[i][j];
-//             }
-//         }
-//     }
-
-//     // Back Substitution
-//     Matrix<long double> t(n, 1);
-//     for (int i = n - 1; i >= 0; --i)
-//     {
-//         t[i][0] = augmented[i][n];
-//         for (size_t j = i + 1; j < n; ++j)
-//         {
-//             t[i][0] -= augmented[i][j] * t[j][0];
-//         }
-//         t[i][0] /= augmented[i][i];
-//     }
-
-//     return t;
-// }
-
-Matrix<long double> solveGauss2(Matrix<int> A)
+Matrix<long double> gaussian_elimination(Matrix<int> A)
 {
     size_t n = A.row();
     Matrix<long double> augmented = matrix_augmentation(A);
@@ -258,15 +190,14 @@ void generate_A_matrix_helper(int n, long long int rowIdx, Matrix<int> B, Matrix
         if (A.determinant() != 0)
         {
             unique_sol_sys++;
-            if(unique_sol_sys>10) return;
-            cout << "Combination of Equations - " << unique_sol_sys << " :: " << endl;
+            cout << unique_sol_sys << endl;
+            // cout << "Combination of Equations - " << unique_sol_sys << " :: " << endl;
             // A.printToStdOut();
             // Gauss-Jordan Elimination::
             // Matrix<long double> t = solve_for_A(A);
             // Matrix<long double> t = solveGauss(A);
-            Matrix<long double> t = solveGauss2(A);
-            // t.printToStdOut();
-            print_solution_matrix(A, t);
+            // Matrix<long double> t = gaussian_elimination(A);
+            // print_solution_matrix(A, t);
         }
         return;
     }
@@ -274,12 +205,9 @@ void generate_A_matrix_helper(int n, long long int rowIdx, Matrix<int> B, Matrix
     for (long long int idx = rowIdx; idx < B.row(); idx++)
     {
         vector<int> curr_row = B.getRowVector(idx);
-        if (is_row_linerly_independent(A, curr_row))
-        {
-            A.push_back(curr_row);
-            generate_A_matrix_helper(n, idx + 1, B, A);
-            A.pop_back();
-        }
+        A.push_back(curr_row);
+        generate_A_matrix_helper(n, idx + 1, B, A);
+        A.pop_back();
     }
 }
 
@@ -294,7 +222,7 @@ int main()
 {
     try
     {
-        long long int no_of_variables = 4;
+        long long int no_of_variables = 9;
         int n = sqrt(no_of_variables); // n*n = no_of_variables
 
         cout << "Generating matrix Y..." << endl;
@@ -311,8 +239,7 @@ int main()
 
         cout << "Generating matrices A..." << endl;
         generate_A_matrix(n, B);
-        cout << "No. of combinations(when B has linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << endl;
-        cout << "No. of combinations(when B has linearly independent rows):: " << no_of_combinations << endl;
+        cout << "No. of combinations(when A might have linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << " = " << no_of_combinations << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
     catch (const std::exception &e)
