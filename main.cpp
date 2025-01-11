@@ -1,7 +1,8 @@
 #include "matrix.hpp"
-#include <iostream>
-#include <vector>
-#include <fstream>
+// #include <iostream>
+// #include <vector>
+// #include <fstream>
+#include <bits/stdc++.h>
 using namespace std;
 
 string X_MATRIX_FOLDER = "X_matrix/";
@@ -182,39 +183,76 @@ Matrix<long double> gaussian_elimination(Matrix<int> A)
     return t;
 }
 
-void generate_A_matrix_helper(int n, long long int rowIdx, Matrix<int> B, Matrix<int> A)
-{
-    if (A.row() == n * n)
-    {
-        no_of_combinations++;
-        if (A.determinant() != 0)
-        {
-            unique_sol_sys++;
-            cout << unique_sol_sys << endl;
-            // cout << "Combination of Equations - " << unique_sol_sys << " :: " << endl;
-            // A.printToStdOut();
-            // Gauss-Jordan Elimination::
-            // Matrix<long double> t = solve_for_A(A);
-            // Matrix<long double> t = solveGauss(A);
-            // Matrix<long double> t = gaussian_elimination(A);
-            // print_solution_matrix(A, t);
-        }
-        return;
-    }
+// void generate_A_matrix_helper(int n, long long int rowIdx, Matrix<int> B, Matrix<int> A)
+// {
+//     if (A.row() == n * n)
+//     {
+//         no_of_combinations++;
+//         if (A.determinant() != 0)
+//         {
+//             unique_sol_sys++;
+//             cout << unique_sol_sys << endl;
+//             // cout << "Combination of Equations - " << unique_sol_sys << " :: " << endl;
+//             // A.printToStdOut();
+//             // Gauss-Jordan Elimination::
+//             // Matrix<long double> t = gaussian_elimination(A);
+//             // print_solution_matrix(A, t);
+//         }
+//         return;
+//     }
 
-    for (long long int idx = rowIdx; idx < B.row(); idx++)
-    {
-        vector<int> curr_row = B.getRowVector(idx);
-        A.push_back(curr_row);
-        generate_A_matrix_helper(n, idx + 1, B, A);
-        A.pop_back();
-    }
-}
+//     for (long long int idx = rowIdx; idx < B.row(); idx++)
+//     {
+//         vector<int> curr_row = B.getRowVector(idx);
+//         A.push_back(curr_row);
+//         generate_A_matrix_helper(n, idx + 1, B, A);
+//         A.pop_back();
+//     }
+// }
 
 void generate_A_matrix(int n, Matrix<int> B)
 {
-    Matrix<int> A(0, n * n);
-    generate_A_matrix_helper(n, 0, B, A);
+    no_of_combinations = 0;
+    unique_sol_sys = 0;
+
+    vector<int> indices(B.row());
+    // Initialize indices with 0, 1, ..., B.row()-1
+    iota(indices.begin(), indices.end(), 0);
+
+    // Use a mask to generate combinations of size `n * n`
+    vector<bool> mask(B.row(), false);
+    fill(mask.begin(), mask.begin() + n * n, true); // First `n * n` entries are true
+
+    // Generate all combinations of size `n*n`
+    do
+    {
+        Matrix<int> A(0, n * n);
+        for (size_t i = 0; i < mask.size(); ++i)
+        {
+            if (mask[i])
+            {
+                A.push_back(B.getRowVector(indices[i]));
+            }
+        }
+
+        // A.printToStdOut();
+        no_of_combinations++;
+        // cout<<no_of_combinations<<endl;
+        if (A.determinant() != 0)
+        {
+            unique_sol_sys++;
+
+            cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
+            // A.printToStdOut();
+            Matrix<long double> t = gaussian_elimination(A);
+            print_solution_matrix(A, t);
+        }
+        // for(auto x:mask) cout<<x;
+        // cout<<endl;
+    } while (prev_permutation(mask.begin(), mask.end()));
+
+    // Matrix<int> A(0, n * n);
+    // generate_A_matrix_helper(n, 0, B, A);
     cout << "Generated Matrices A successfully!!" << endl;
 }
 
@@ -222,7 +260,9 @@ int main()
 {
     try
     {
-        long long int no_of_variables = 9;
+        long long int no_of_variables = 4;
+        cout << "No. of variables in matrix T(size of T):: ";
+        cin >> no_of_variables;
         int n = sqrt(no_of_variables); // n*n = no_of_variables
 
         cout << "Generating matrix Y..." << endl;

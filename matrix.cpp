@@ -1137,20 +1137,16 @@ numericalType Matrix<numericalType>::determinant() const
 		numericalType det = 1;
 		for (unsigned i = 0; i < _row; i++)
 		{
-			for (unsigned j = 0; j < _col; j++)
-			{
-				det *= matrix[i][j];
-				cntr++;
-			}
+			det *= matrix[i][i];
 		}
-		det *= (cntr % 2) ? -1 : 1;
+		// det *= (cntr % 2) ? -1 : 1;
 		return det;
 	}
 
 	Matrix<numericalType> L, U;
 	long long int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
 
-	if (rowSwaps == 0)
+	if (rowSwaps == -1)
 		return 0;
 	numericalType det = 1;
 #ifdef _USING_OMP_
