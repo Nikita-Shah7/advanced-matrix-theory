@@ -5,10 +5,13 @@
 #include <bits/stdc++.h>
 using namespace std;
 
+
 string X_MATRIX_FOLDER = "X_matrix/";
+string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
+
 
 void print_vector(vector<int> v)
 {
@@ -54,7 +57,7 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
 
     if (!file)
     {
-        cerr << "ERROR MESSAGE:: Enable to open the file!!";
+        cerr << "ERROR MESSAGE(generate_B_matrix):: Enable to open the file!!";
         return;
     }
 
@@ -92,6 +95,26 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
 
     cout << "Generated Matrix B successfully!!" << endl;
     return;
+}
+
+void print_solution_matrix(int n, Matrix<long double> t)
+{
+    string filename = SOLUTION_SET_FOLDER + "sol_set_" + to_string(n) + ".txt";
+    // Open the file in append mode
+    ofstream file(filename, ios::app);
+
+    if (!file)
+    {
+        cerr << "ERROR MESSAGE:: Enable to open the file!!";
+        return;
+    }
+
+    file << "[ ";
+    for (int i = 0; i < t.row(); i++)
+        file << setw(7) << t[i][0] << " ";
+    file << setw(10) << "]" << endl;
+
+    file.close();
 }
 
 void print_solution_matrix(Matrix<int> A, Matrix<long double> t)
@@ -211,7 +234,7 @@ bool check_condition(int n, Matrix<long double> t)
 
     if (!file)
     {
-        cerr << "ERROR MESSAGE:: Enable to open the file!!";
+        cerr << "ERROR MESSAGE(in check condition):: Enable to open the file!!";
         return 0;
     }
 
@@ -245,10 +268,6 @@ void generate_A_matrix(int n, Matrix<int> B)
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
-    vector<int> indices(B.row());
-    // Initialize indices with 0, 1, ..., B.row()-1
-    iota(indices.begin(), indices.end(), 0);
-
     // Use a mask to generate combinations of size `n * n`
     vector<bool> mask(B.row(), false);
     fill(mask.begin(), mask.begin() + n * n, true); // First `n * n` entries are true
@@ -263,13 +282,13 @@ void generate_A_matrix(int n, Matrix<int> B)
         {
             if (mask[i])
             {
-                A.push_back(B.getRowVector(indices[i]));
+                A.push_back(B.getRowVector(i));
             }
         }
 
         // A.printToStdOut();
         no_of_combinations++;
-        // cout<<no_of_combinations<<endl;
+        // cout << no_of_combinations << endl;
         if (A.determinant() != 0)
         {
             non_zero_det_A++;
@@ -280,7 +299,8 @@ void generate_A_matrix(int n, Matrix<int> B)
             {
                 unique_sol_sys++;
                 cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
-                print_solution_matrix(A, t);
+                // print_solution_matrix(n, t);  // file <<
+                print_solution_matrix(A, t); // cout <<
             }
         }
     } while (prev_permutation(mask.begin(), mask.end()));
@@ -315,13 +335,14 @@ int main()
 
         cout << "Generating matrices A..." << endl;
         generate_A_matrix(n, B);
+
         cout << "No. of combinations(when A might have linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << " = " << no_of_combinations << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
     catch (const std::exception &e)
     {
-        cerr << "ERROR MESSAGE:: An exception occurred: " << e.what() << endl;
+        cerr << "ERROR MESSAGE(in main()):: An exception occurred: " << e.what() << endl;
     }
 
     return 0;

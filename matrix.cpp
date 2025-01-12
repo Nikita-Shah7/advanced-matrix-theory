@@ -1139,7 +1139,6 @@ numericalType Matrix<numericalType>::determinant() const
 		{
 			det *= matrix[i][i];
 		}
-		// det *= (cntr % 2) ? -1 : 1;
 		return det;
 	}
 
@@ -1647,8 +1646,11 @@ void Matrix<numericalType>::qrDecomposition(Matrix<numericalType>& Q, Matrix<num
 		// Normalization
 		numericalType norm = static_cast<numericalType>(std::sqrt(dotProduct(ui, ui)));
 		R[i][i] = norm;
-		for (size_t k = 0; k < m; ++k) 
-			Q[k][i] = ui[k] / norm;
+		if (norm != 0)
+		{
+			for (size_t k = 0; k < m; ++k)
+				Q[k][i] = ui[k] / norm;
+		}
 	}
 }
 
