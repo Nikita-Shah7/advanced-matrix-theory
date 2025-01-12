@@ -702,9 +702,9 @@ void Matrix<numericalType>::printToStdOut() const
 		{
 			// Print each element with a fixed space or using std::setw for alignment
 			// Adjust std::setw(10) as needed to accommodate the size of your elements
-			std::cout << std::setw(10) << matrix[i][j] << " ";
+			std::cout << std::setw(7) << matrix[i][j] << " ";
 		}
-		std::cout << std::setw(10) << "]" << std::endl; // End of the row
+		std::cout << std::setw(7) << "]" << std::endl; // End of the row
 	}
 	std::cout << "]" << std::endl; // End of the matrix
 }

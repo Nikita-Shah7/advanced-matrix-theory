@@ -5,13 +5,12 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-
 string X_MATRIX_FOLDER = "X_matrix/";
 string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
+long long int after_check_1 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
-
 
 void print_vector(vector<int> v)
 {
@@ -61,9 +60,9 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
         return;
     }
 
-    long long int p = 1;
+    long long int p = 0;
     string line = "";
-    while (getline(file, line) && p < 2 ^ n)
+    while (getline(file, line) && p < pow(2, n - 1))
     {
         // x = X[p]
         vector<int> x; // x -> 1 x n
@@ -92,6 +91,47 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
         p++;
     }
     file.close();
+
+
+    ifstream file2(filename);
+
+    if (!file)
+    {
+        cerr << "ERROR MESSAGE(generate_B_matrix):: Enable to open the file!!";
+        return;
+    }
+
+    p = 0;
+    line = "";
+    while (getline(file2, line) && p < pow(2, n - 1))
+    {
+        // x = X[p]
+        vector<int> x; // x -> 1 x n
+        stringstream ss(line);
+
+        int value;
+        while (ss >> value)
+        {
+            x.push_back(value);
+        }
+
+        for (long long int q = 0; q < Y.row(); q++)
+        {
+            // y = Y[q]
+            vector<int> y = Y.getRowVector(q); // y -> 1 x n
+            vector<int> b;
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < n; j++)
+                {
+                    b.push_back(-1 * x[j] * y[i]);
+                }
+            }
+            B.push_back(b);
+        }
+        p++;
+    }
+    file2.close();
 
     cout << "Generated Matrix B successfully!!" << endl;
     return;
@@ -224,7 +264,7 @@ Matrix<long double> generate_T_matrix(int n, Matrix<long double> t)
     return T;
 }
 
-bool check_condition(int n, Matrix<long double> t)
+bool check_condition_for_T(int n, Matrix<long double> t)
 {
     // Generate matrix T from t
     Matrix<long double> T = generate_T_matrix(n, t);
@@ -262,9 +302,42 @@ bool check_condition(int n, Matrix<long double> t)
     return 1;
 }
 
+// In matrix B, ith row = -1*((i+step)th row))
+// i.e. these 2 rows are Linearly dep, so these 2 rows can not be taken in same A matrix
+bool check_linear_dep_of_A(int n, vector<bool> mask)
+{
+    long long int step = pow(2, 2 * n - 2);
+    for (long long int i = 0; i < step; i++)
+    {
+        if (mask[i] && mask[i] == mask[i + step])
+            return true;
+    }
+    return false;
+}
+
+void solve_for_A(int n, Matrix<int> A)
+{
+    if (A.determinant() != 0)
+    {
+        non_zero_det_A++;
+
+        // A.printToStdOut();
+        Matrix<long double> t = gaussian_elimination(A);
+        if (check_condition_for_T(n, t))
+        {
+            unique_sol_sys++;
+            cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
+            // print_solution_matrix(n, t);  // file <<
+            print_solution_matrix(A, t); // cout <<
+        }
+    }
+    return;
+}
+
 void generate_A_matrix(int n, Matrix<int> B)
 {
     no_of_combinations = 0;
+    after_check_1 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -275,8 +348,16 @@ void generate_A_matrix(int n, Matrix<int> B)
     // Generate all combinations of size `n*n`
     do
     {
-        // for(auto x:mask) cout<<x;
-        // cout<<endl;
+        no_of_combinations++;
+        // cout << no_of_combinations << endl;
+
+        // for (auto x : mask)
+        //     cout << x;
+        // cout << endl;
+        if (check_linear_dep_of_A(n, mask))
+            continue;
+
+
         Matrix<int> A(0, n * n);
         for (size_t i = 0; i < mask.size(); ++i)
         {
@@ -287,22 +368,11 @@ void generate_A_matrix(int n, Matrix<int> B)
         }
 
         // A.printToStdOut();
-        no_of_combinations++;
-        // cout << no_of_combinations << endl;
-        if (A.determinant() != 0)
-        {
-            non_zero_det_A++;
+        after_check_1++;
+        // cout << after_check_1 << endl;
 
-            // A.printToStdOut();
-            Matrix<long double> t = gaussian_elimination(A);
-            if (check_condition(n, t))
-            {
-                unique_sol_sys++;
-                cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
-                // print_solution_matrix(n, t);  // file <<
-                print_solution_matrix(A, t); // cout <<
-            }
-        }
+        solve_for_A(n, A);
+
     } while (prev_permutation(mask.begin(), mask.end()));
 
     cout << "Generated Matrices A successfully!!" << endl;
@@ -337,6 +407,7 @@ int main()
         generate_A_matrix(n, B);
 
         cout << "No. of combinations(when A might have linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << " = " << no_of_combinations << endl;
+        cout << "No. of combinations(after check 1):: " << after_check_1 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
