@@ -9,6 +9,7 @@ string X_MATRIX_FOLDER = "X_matrix/";
 string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
 long long int after_check_1 = 0;
+long long int after_check_2 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 
@@ -303,12 +304,76 @@ bool check_condition_for_T(int n, Matrix<long double> t)
 
 // In matrix B, ith row = -1*((i+step)th row))
 // i.e. these 2 rows are Linearly dep, so these 2 rows can not be taken in same A matrix
-bool check_linear_dep_of_A(int n, vector<bool> mask)
+bool check_linear_dep_of_A_1(int n, vector<bool> mask)
 {
-    long long int step = pow(2, 2 * n - 2);
+    long long int step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
     for (long long int i = 0; i < step; i++)
     {
-        if (mask[i] && mask[i] == mask[i + step])
+        if (mask[i] && mask[i + step])
+            return true;
+    }
+    return false;
+}
+
+// except for n=2 ::
+// In matrix B, R0 - R1 = R2 - R3
+// i.e. rows 0,1,2,3 cannot be in same A
+// and rows 0,1,2,19 cannot be in same A
+// here, we highlight rows 3 and 19.
+// Ri - R(i+1) = R(i+2) - R(i+3) ; for every i%4=0
+// and Ri = -R(i+step) ; for every i
+// i.e. rows Ri , R(i+1) , R(i+2) , R(i+3) cannot be in same A
+// and rows Ri , R(i+1) , R(i+2) , R(i+3+step) cannot be in same A
+// here, we highlight ith row for which i%4=3
+bool check_linear_dep_of_A_2(int n, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    long long int step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+
+    // 3rd row should not be with (0,1,2)
+    // 7rd row should not be with (4,5,6)
+    // 11110000000....
+    // 000011110000000....
+    // 0000000011110000000....
+    //  .
+    //  .
+    //  .
+    // ...000000000000000001111
+    for (long long int i = 0; i < mask.size(); i += 4)
+    {
+        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3])
+            return true;
+    }
+
+    // (step+3)th row should not be with (0,1,2)
+    // (step+7)th row should not be with (4,5,6)
+    // 1110000000....10000000...
+    // 00001110000000....10000000...
+    // 000000001110000000....10000000...
+    //  .
+    //  .
+    //  .
+    // ...00000000001110000000....1
+    for (long long int i = 0; i < step; i += 4)
+    {
+        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3 + step])
+            return true;
+    }
+
+    // 3rd row should not be with (step+0,step+1,step+2)
+    // 7th row should not be with (step+4+0,step+4+1,step+4+2)
+    // 0001000000.....000111000...
+    // 00000001000000.....000111000...
+    // 000000000001000000.....000111000...
+    // .
+    // .
+    // .
+    // 0000.......1000000.....0001110
+    for (long long int i = step; i < mask.size(); i += 4)
+    {
+        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3 - step])
             return true;
     }
     return false;
@@ -337,6 +402,7 @@ void generate_A_matrix(int n, Matrix<int> B)
 {
     no_of_combinations = 0;
     after_check_1 = 0;
+    after_check_2 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -353,9 +419,17 @@ void generate_A_matrix(int n, Matrix<int> B)
         // for (auto x : mask)
         //     cout << x;
         // cout << endl;
-        if (check_linear_dep_of_A(n, mask))
+        if (check_linear_dep_of_A_1(n, mask))
             continue;
 
+        after_check_1++;
+        // cout << after_check_1 << endl;
+
+        if (check_linear_dep_of_A_2(n, mask))
+            continue;
+
+        after_check_2++;
+        // cout << after_check_2 << endl;
 
         Matrix<int> A(0, n * n);
         for (size_t i = 0; i < mask.size(); ++i)
@@ -367,8 +441,6 @@ void generate_A_matrix(int n, Matrix<int> B)
         }
 
         // A.printToStdOut();
-        after_check_1++;
-        // cout << after_check_1 << endl;
 
         // solve_for_A(n, A);
 
@@ -407,6 +479,7 @@ int main()
 
         cout << "No. of combinations(when A might have linearly dependent rows):: " << (1 << (2 * n - 1)) << " C " << B.col() << " = " << no_of_combinations << endl;
         cout << "No. of combinations(after check 1):: " << after_check_1 << endl;
+        cout << "No. of combinations(after check 2):: " << after_check_2 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
