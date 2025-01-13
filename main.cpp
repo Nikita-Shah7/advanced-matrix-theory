@@ -92,7 +92,6 @@ void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
     }
     file.close();
 
-
     ifstream file2(filename);
 
     if (!file)
@@ -280,7 +279,7 @@ bool check_condition_for_T(int n, Matrix<long double> t)
 
     long long int p = 1;
     string line = "";
-    while (getline(file, line) && p < 2 ^ n)
+    while (getline(file, line) && p < pow(2, n - 1))
     {
         // x = X[p]
         Matrix<long double> x(n, 1); // x -> 1 x n
@@ -295,11 +294,11 @@ bool check_condition_for_T(int n, Matrix<long double> t)
         }
 
         if ((T * x).l1Norm() > 1)
-            return 0;
+            return false;
         p++;
     }
     file.close();
-    return 1;
+    return true;
 }
 
 // In matrix B, ith row = -1*((i+step)th row))
@@ -371,7 +370,7 @@ void generate_A_matrix(int n, Matrix<int> B)
         after_check_1++;
         // cout << after_check_1 << endl;
 
-        solve_for_A(n, A);
+        // solve_for_A(n, A);
 
     } while (prev_permutation(mask.begin(), mask.end()));
 
