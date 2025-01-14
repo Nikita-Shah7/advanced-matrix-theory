@@ -20,6 +20,22 @@ void print_vector(vector<int> v)
     cout << endl;
 }
 
+void printToStdOutWithCommas(Matrix<int> A)
+{
+    cout << "[" << endl;
+    for (unsigned i = 0; i < A.row(); ++i)
+    {
+        cout << "\t[ "; // Start of a new row
+        for (unsigned j = 0; j < A.col() - 1; ++j)
+        {
+            cout << setw(3) << A[i][j] << ", ";
+        }
+        cout << setw(3) << A[i][A.col() - 1] << " ";
+        cout << setw(3) << "]," << endl;
+    }
+    cout << "]" << endl;
+}
+
 void generate_Y_matrix_helper(int n, vector<int> &curr, Matrix<int> &Y)
 {
     if (n == 1)
@@ -317,13 +333,32 @@ bool check_linear_dep_of_A_1(int n, vector<bool> mask)
 
 // except for n=2 ::
 // In matrix B, R0 - R1 = R2 - R3
-// i.e. rows 0,1,2,3 cannot be in same A
-// and rows 0,1,2,19 cannot be in same A
-// here, we highlight rows 3 and 19.
+// i.e. considering n=3 as e.g.
+// rows 0,1,2,3 cannot be in same A,
+// rows 0,1,2,19 cannot be in same A,
+// rows 16,17,18,3 cannot be in same A,
+// rows 0,1,18,3 cannot be in same A,
+// rows 16,17,2,19 cannot be in same A,
+// rows 0,17,2,3 cannot be in same A,
+// rows 16,1,18,19 cannot be in same A,
+// rows 16,1,2,3 cannot be in same A,
+// rows 0,17,18,19 cannot be in same A
 // Ri - R(i+1) = R(i+2) - R(i+3) ; for every i%4=0
 // and Ri = -R(i+step) ; for every i
-// i.e. rows Ri , R(i+1) , R(i+2) , R(i+3) cannot be in same A
-// and rows Ri , R(i+1) , R(i+2) , R(i+3+step) cannot be in same A
+// CASE 1 ::
+// rows Ri , R(i+1) , R(i+2) , R(i+3) for every i%4=0
+// CASE 2 ::
+// rows Ri , R(i+1) , R(i+2) , R(i+3+step)
+// rows R(i+step) , R(i+1+step) , R(i+2+step) , R(i+3)
+// CASE 3 ::
+// rows Ri , R(i+1) , R(i+2+step) , R(i+3)
+// rows R(i+step) , R(i+1+step) , R(i+2) , R(i+3+step)
+// CASE 4 ::
+// rows Ri , R(i+1+step) , R(i+2) , R(i+3)
+// rows R(i+step) , R(i+1) , R(i+2+step) , R(i+3+step)
+// CASE 5 ::
+// rows R(i+step) , R(i+1) , R(i+2) , R(i+3)
+// rows Ri , R(i+1+step) , R(i+2+step) , R(i+3+step)
 // here, we highlight ith row for which i%4=3
 bool check_linear_dep_of_A_2(int n, vector<bool> mask)
 {
@@ -332,6 +367,7 @@ bool check_linear_dep_of_A_2(int n, vector<bool> mask)
 
     long long int step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
 
+    // CASE 1 ::
     // 3rd row should not be with (0,1,2)
     // 7rd row should not be with (4,5,6)
     // 11110000000....
@@ -347,6 +383,7 @@ bool check_linear_dep_of_A_2(int n, vector<bool> mask)
             return true;
     }
 
+    // CASE 2 ::
     // (step+3)th row should not be with (0,1,2)
     // (step+7)th row should not be with (4,5,6)
     // 1110000000....10000000...
@@ -376,6 +413,43 @@ bool check_linear_dep_of_A_2(int n, vector<bool> mask)
         if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3 - step])
             return true;
     }
+
+    // CASE 3 ::
+    for (long long int i = 0; i < step; i += 4)
+    {
+        if (mask[i] && mask[i + 1] && mask[i + 2 + step] && mask[i + 3])
+            return true;
+    }
+    for (long long int i = step; i < mask.size(); i += 4)
+    {
+        if (mask[i] && mask[i + 1] && mask[i + 2 - step] && mask[i + 3])
+            return true;
+    }
+
+    // CASE 4 ::
+    for (long long int i = 0; i < step; i += 4)
+    {
+        if (mask[i] && mask[i + 1 + step] && mask[i + 2] && mask[i + 3])
+            return true;
+    }
+    for (long long int i = step; i < mask.size(); i += 4)
+    {
+        if (mask[i] && mask[i + 1 - step] && mask[i + 2] && mask[i + 3])
+            return true;
+    }
+
+    // CASE 5 ::
+    for (long long int i = 0; i < step; i += 4)
+    {
+        if (mask[i + step] && mask[i + 1] && mask[i + 2] && mask[i + 3])
+            return true;
+    }
+    for (long long int i = step; i < mask.size(); i += 4)
+    {
+        if (mask[i - step] && mask[i + 1] && mask[i + 2] && mask[i + 3])
+            return true;
+    }
+
     return false;
 }
 
@@ -385,6 +459,7 @@ void solve_for_A(int n, Matrix<int> A)
     {
         non_zero_det_A++;
 
+        // printToStdOutWithCommas(A);
         // A.printToStdOut();
         Matrix<long double> t = gaussian_elimination(A);
         if (check_condition_for_T(n, t))
@@ -416,9 +491,6 @@ void generate_A_matrix(int n, Matrix<int> B)
         no_of_combinations++;
         // cout << no_of_combinations << endl;
 
-        // for (auto x : mask)
-        //     cout << x;
-        // cout << endl;
         if (check_linear_dep_of_A_1(n, mask))
             continue;
 
@@ -431,6 +503,9 @@ void generate_A_matrix(int n, Matrix<int> B)
         after_check_2++;
         // cout << after_check_2 << endl;
 
+        // for (auto x : mask)
+        //     cout << x;
+        // cout << endl;
         Matrix<int> A(0, n * n);
         for (size_t i = 0; i < mask.size(); ++i)
         {
@@ -473,6 +548,7 @@ int main()
         generate_B_matrix(n, Y, B);
         cout << "Matrix B::" << endl;
         B.printToStdOut();
+        // printToStdOutWithCommas(B);
 
         cout << "Generating matrices A..." << endl;
         generate_A_matrix(n, B);
