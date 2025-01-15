@@ -28,10 +28,10 @@ void printToStdOutWithCommas(Matrix<int> A)
         cout << "\t[ "; // Start of a new row
         for (unsigned j = 0; j < A.col() - 1; ++j)
         {
-            cout << setw(3) << A[i][j] << ", ";
+            cout << setw(1) << A[i][j] << ", ";
         }
-        cout << setw(3) << A[i][A.col() - 1] << " ";
-        cout << setw(3) << "]," << endl;
+        cout << setw(1) << A[i][A.col() - 1] << " ";
+        cout << setw(1) << "]," << endl;
     }
     cout << "]" << endl;
 }
@@ -331,122 +331,42 @@ bool check_linear_dep_of_A_1(int n, vector<bool> mask)
     return false;
 }
 
+bool check_linear_dep_of_A_helper(int idx, vector<bool> mask)
+{
+    // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+
+    if ((mask[idx] == 1) || (mask[idx + (mask.size() / 2)] == 1))
+        return true;
+    return false;
+}
+
 // except for n=2 ::
-// In matrix B, R0 - R1 = R2 - R3
-// i.e. considering n=3 as e.g.
-// rows 0,1,2,3 cannot be in same A,
-// rows 0,1,2,19 cannot be in same A,
-// rows 16,17,18,3 cannot be in same A,
-// rows 0,1,18,3 cannot be in same A,
-// rows 16,17,2,19 cannot be in same A,
-// rows 0,17,2,3 cannot be in same A,
-// rows 16,1,18,19 cannot be in same A,
-// rows 16,1,2,3 cannot be in same A,
-// rows 0,17,18,19 cannot be in same A
 // Ri - R(i+1) = R(i+2) - R(i+3) ; for every i%4=0
 // and Ri = -R(i+step) ; for every i
-// CASE 1 ::
-// rows Ri , R(i+1) , R(i+2) , R(i+3) for every i%4=0
-// CASE 2 ::
-// rows Ri , R(i+1) , R(i+2) , R(i+3+step)
-// rows R(i+step) , R(i+1+step) , R(i+2+step) , R(i+3)
-// CASE 3 ::
-// rows Ri , R(i+1) , R(i+2+step) , R(i+3)
-// rows R(i+step) , R(i+1+step) , R(i+2) , R(i+3+step)
-// CASE 4 ::
-// rows Ri , R(i+1+step) , R(i+2) , R(i+3)
-// rows R(i+step) , R(i+1) , R(i+2+step) , R(i+3+step)
-// CASE 5 ::
-// rows R(i+step) , R(i+1) , R(i+2) , R(i+3)
-// rows Ri , R(i+1+step) , R(i+2+step) , R(i+3+step)
-// here, we highlight ith row for which i%4=3
+// rows Ri , R(i+1) , R(i+2) , R(i+3) cannot be in same A for every i%4=0
+// _______  ________  ________   ________
+//    Ri     R(i+1)    R(i+2)     R(i+3)
+//    2   *    2    *    2    *    2     =   16 possible cases
+// considering n=3 as e.g.
+// In matrix B, R0 - R1 = R2 - R3
+// rows 0,1,2,3 cannot be in same A,
+// rows 0,1,2,19 cannot be in same A,
+// rows 0,1,18,19 cannot be in same A,
+// rows 16,17,18,3 cannot be in same A,
+// etc.
 bool check_linear_dep_of_A_2(int n, vector<bool> mask)
 {
     if (n == 2)
         return false;
 
-    long long int step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+    // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
 
-    // CASE 1 ::
-    // 3rd row should not be with (0,1,2)
-    // 7rd row should not be with (4,5,6)
-    // 11110000000....
-    // 000011110000000....
-    // 0000000011110000000....
-    //  .
-    //  .
-    //  .
-    // ...000000000000000001111
-    for (long long int i = 0; i < mask.size(); i += 4)
+    for (long long int i = 0; i < mask.size() / 2; i += 4)
     {
-        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3])
-            return true;
-    }
-
-    // CASE 2 ::
-    // (step+3)th row should not be with (0,1,2)
-    // (step+7)th row should not be with (4,5,6)
-    // 1110000000....10000000...
-    // 00001110000000....10000000...
-    // 000000001110000000....10000000...
-    //  .
-    //  .
-    //  .
-    // ...00000000001110000000....1
-    for (long long int i = 0; i < step; i += 4)
-    {
-        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3 + step])
-            return true;
-    }
-
-    // 3rd row should not be with (step+0,step+1,step+2)
-    // 7th row should not be with (step+4+0,step+4+1,step+4+2)
-    // 0001000000.....000111000...
-    // 00000001000000.....000111000...
-    // 000000000001000000.....000111000...
-    // .
-    // .
-    // .
-    // 0000.......1000000.....0001110
-    for (long long int i = step; i < mask.size(); i += 4)
-    {
-        if (mask[i] && mask[i + 1] && mask[i + 2] && mask[i + 3 - step])
-            return true;
-    }
-
-    // CASE 3 ::
-    for (long long int i = 0; i < step; i += 4)
-    {
-        if (mask[i] && mask[i + 1] && mask[i + 2 + step] && mask[i + 3])
-            return true;
-    }
-    for (long long int i = step; i < mask.size(); i += 4)
-    {
-        if (mask[i] && mask[i + 1] && mask[i + 2 - step] && mask[i + 3])
-            return true;
-    }
-
-    // CASE 4 ::
-    for (long long int i = 0; i < step; i += 4)
-    {
-        if (mask[i] && mask[i + 1 + step] && mask[i + 2] && mask[i + 3])
-            return true;
-    }
-    for (long long int i = step; i < mask.size(); i += 4)
-    {
-        if (mask[i] && mask[i + 1 - step] && mask[i + 2] && mask[i + 3])
-            return true;
-    }
-
-    // CASE 5 ::
-    for (long long int i = 0; i < step; i += 4)
-    {
-        if (mask[i + step] && mask[i + 1] && mask[i + 2] && mask[i + 3])
-            return true;
-    }
-    for (long long int i = step; i < mask.size(); i += 4)
-    {
-        if (mask[i - step] && mask[i + 1] && mask[i + 2] && mask[i + 3])
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask))
             return true;
     }
 
