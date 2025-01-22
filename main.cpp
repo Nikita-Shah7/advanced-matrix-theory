@@ -11,6 +11,7 @@ long long int no_of_combinations = 0;
 long long int after_check_1 = 0;
 long long int after_check_2 = 0;
 long long int after_check_3 = 0;
+long long int after_check_4 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 
@@ -168,8 +169,8 @@ void print_solution_matrix(int n, Matrix<long double> t)
 
     file << "[ ";
     for (int i = 0; i < t.row(); i++)
-        file << setw(7) << t[i][0] << " ";
-    file << setw(10) << "]" << endl;
+        file << setw(5) << t[i][0] << " ";
+    file << setw(5) << "]" << endl;
 
     file.close();
 }
@@ -182,11 +183,11 @@ void print_solution_matrix(Matrix<int> A, Matrix<long double> t)
         std::cout << "\t[ ";
         for (unsigned j = 0; j < A.col(); ++j)
         {
-            std::cout << std::setw(10) << A[i][j] << " ";
+            std::cout << std::setw(5) << A[i][j] << " ";
         }
         cout << "   |";
-        cout << setw(10) << t[i][0] << " ";
-        std::cout << std::setw(10) << "]" << std::endl;
+        cout << setw(5) << t[i][0] << " ";
+        std::cout << std::setw(5) << "]" << std::endl;
     }
     std::cout << "]" << std::endl;
 }
@@ -335,9 +336,18 @@ bool check_linear_dep_of_A_1(int n, vector<bool> mask)
 bool check_linear_dep_of_A_helper(int idx, vector<bool> mask)
 {
     // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
-
-    if ((mask[idx] == 1) || (mask[idx + (mask.size() / 2)] == 1))
-        return true;
+    if (idx >= (mask.size() / 2))
+    {
+        // cout << idx - (mask.size() / 2) << " ";
+        if ((mask[idx] == 1) || (mask[idx - (mask.size() / 2)] == 1))
+            return true;
+    }
+    else
+    {
+        // cout << idx << " ";
+        if ((mask[idx] == 1) || (mask[idx + (mask.size() / 2)] == 1))
+            return true;
+    }
     return false;
 }
 
@@ -394,6 +404,49 @@ bool check_linear_dep_of_A_3(int n, vector<bool> mask)
     return false;
 }
 
+// consider linear dependencies with 6 rows
+bool check_linear_dep_of_A_4(int n, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    long long int step = pow(2, n - 1);
+
+    for (long long int i = 0; i < ((mask.size() / 2)); i += 4)
+    {
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask))
+            return true;
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask))
+            return true;
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask))
+            return true;
+    }
+
+    return false;
+}
+
 void solve_for_A(int n, Matrix<int> A)
 {
     if (A.determinant() != 0)
@@ -420,6 +473,7 @@ void generate_A_matrix(int n, Matrix<int> B)
     after_check_1 = 0;
     after_check_2 = 0;
     after_check_3 = 0;
+    after_check_4 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -450,6 +504,12 @@ void generate_A_matrix(int n, Matrix<int> B)
 
         after_check_3++;
         // cout << after_check_3 << endl;
+
+        if (check_linear_dep_of_A_4(n, mask))
+            continue;
+
+        after_check_4++;
+        // cout << after_check_4 << endl;
 
         // for (auto x : mask)
         //     cout << x;
@@ -505,6 +565,7 @@ int main()
         cout << "No. of combinations(after check 1):: " << after_check_1 << endl;
         cout << "No. of combinations(after check 2):: " << after_check_2 << endl;
         cout << "No. of combinations(after check 3):: " << after_check_3 << endl;
+        cout << "No. of combinations(after check 4):: " << after_check_4 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
