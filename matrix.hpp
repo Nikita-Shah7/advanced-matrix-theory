@@ -1446,6 +1446,11 @@ public:
 	// Returns: True if the matrix is an identity matrix, false otherwise.
 	bool isIdentity() const;
 
+	// isZero: Checks if the matrix is a zero matrix.
+	// Parameters: None.
+	// Returns: True if the matrix is a zero matrix, false otherwise.
+	bool isZero() const;
+
 	// normalize: Normalizes the whole matrix to the range of [0 1]
 	// Parameters: None.
 	// Returns: The normalized matrix.

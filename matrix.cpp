@@ -3346,6 +3346,19 @@ bool Matrix<numericalType>::isIdentity() const
 }
 
 template<typename numericalType>
+bool Matrix<numericalType>::isZero() const
+{
+	for (unsigned i = 0; i < _row; i++) {
+		for (unsigned j = 0; j < _col; j++) {
+			if (matrix[i][j] != static_cast<numericalType>(0))
+				return false;
+		}
+	}
+
+	return true;
+}
+
+template<typename numericalType>
 Matrix<numericalType> Matrix<numericalType>::normalize() const
 {
 	numericalType max = std::numeric_limits<numericalType>::min();
