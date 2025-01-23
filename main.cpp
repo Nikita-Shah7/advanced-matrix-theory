@@ -12,6 +12,7 @@ long long int after_check_1 = 0;
 long long int after_check_2 = 0;
 long long int after_check_3 = 0;
 long long int after_check_4 = 0;
+long long int after_check_5 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 
@@ -391,9 +392,9 @@ bool check_linear_dep_of_A_3(int n, vector<bool> mask)
 
     // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
     long long int step = pow(2, n - 1);
-    
+
     for (long long int i = 0; i < ((mask.size() / 2) - (3 * step)); i++)
-    {        
+    {
         // p%2=0 should be satisfied where p is for pth row of X
         long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
         if (p % 1)
@@ -455,6 +456,208 @@ bool check_linear_dep_of_A_4(int n, vector<bool> mask)
     return false;
 }
 
+// consider linear dependencies with 8 rows (check-5 derived from check-4)
+bool check_linear_dep_of_A_5(int n, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    long long int step = pow(2, n - 1);
+
+    for (long long int i = 0; i < ((mask.size() / 2)); i += 4)
+    {
+        // p%2=0 should be satisfied for check-3
+        long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        if (p % 1)
+            continue;
+        // for i and (i+1)
+        if (check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        // for i and (i+2)
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        // for i and (i+3)
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        // for i and (i+step)
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        // for i and (i+2*step)
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+        // for i and (i+3*step)
+        if (check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step + 3, mask))
+            return true;
+
+        // For (i+1) and (i+1+1)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask))
+            return true;
+        // For (i+1) and (i+1+2)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask))
+            return true;
+        // For (i+1) and (i+1+step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask))
+            return true;
+        // For (i+1) and (i+1+2*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step, mask))
+            return true;
+        // For (i+1) and (i+1+3*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 1 + 3 * step + 2, mask))
+            return true;
+
+        // For (i+2) and (i+2+1)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask))
+            return true;
+        // For (i+2) and (i+2+step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask))
+            return true;
+        // For (i+2) and (i+2+2*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step, mask))
+            return true;
+        // For (i+2) and (i+2+3*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2 + 3 * step + 1, mask))
+            return true;
+
+        // For (i+3) and (i+3+step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step - 3, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask))
+            return true;
+        // For (i+3) and (i+3+2*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step - 3, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step - 1, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step, mask))
+            return true;
+        // For (i+3) and (i+3+3*step)
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step - 3, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step - 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3 + 3 * step - 1, mask))
+            return true;
+    }
+
+    return false;
+}
+
 void solve_for_A(int n, Matrix<int> A)
 {
     if (A.determinant() != 0)
@@ -482,6 +685,7 @@ void generate_A_matrix(int n, Matrix<int> B)
     after_check_2 = 0;
     after_check_3 = 0;
     after_check_4 = 0;
+    after_check_5 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -518,6 +722,12 @@ void generate_A_matrix(int n, Matrix<int> B)
 
         after_check_4++;
         // cout << after_check_4 << endl;
+
+        if (check_linear_dep_of_A_5(n, mask))
+            continue;
+
+        after_check_5++;
+        // cout << after_check_5 << endl;
 
         // for (auto x : mask)
         //     cout << x;
@@ -574,6 +784,7 @@ int main()
         cout << "No. of combinations(after check 2):: " << after_check_2 << endl;
         cout << "No. of combinations(after check 3):: " << after_check_3 << endl;
         cout << "No. of combinations(after check 4):: " << after_check_4 << endl;
+        cout << "No. of combinations(after check 5):: " << after_check_5 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
