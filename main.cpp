@@ -391,9 +391,13 @@ bool check_linear_dep_of_A_3(int n, vector<bool> mask)
 
     // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
     long long int step = pow(2, n - 1);
-
+    
     for (long long int i = 0; i < ((mask.size() / 2) - (3 * step)); i++)
-    {
+    {        
+        // p%2=0 should be satisfied where p is for pth row of X
+        long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        if (p % 1)
+            continue;
         if (check_linear_dep_of_A_helper(i, mask) &&
             check_linear_dep_of_A_helper(i + 1 * step, mask) &&
             check_linear_dep_of_A_helper(i + 2 * step, mask) &&
@@ -404,7 +408,7 @@ bool check_linear_dep_of_A_3(int n, vector<bool> mask)
     return false;
 }
 
-// consider linear dependencies with 6 rows
+// consider linear dependencies with 6 rows (check-4 = check-2 + check-3)
 bool check_linear_dep_of_A_4(int n, vector<bool> mask)
 {
     if (n == 2)
@@ -414,6 +418,10 @@ bool check_linear_dep_of_A_4(int n, vector<bool> mask)
 
     for (long long int i = 0; i < ((mask.size() / 2)); i += 4)
     {
+        // p%2=0 should be satisfied for check-3
+        long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        if (p % 1)
+            continue;
         if (check_linear_dep_of_A_helper(i + 1, mask) &&
             check_linear_dep_of_A_helper(i + 2, mask) &&
             check_linear_dep_of_A_helper(i + 3, mask) &&
