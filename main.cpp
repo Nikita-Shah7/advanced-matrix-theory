@@ -601,6 +601,43 @@ bool check_linear_dep_of_A_5(int n, vector<bool> mask)
     return false;
 }
 
+bool check_linear_dep_of_A_6_helper(int n, const Matrix<int> B, vector<bool> mask, int col1, int col2, int col3, int col4)
+{
+    for (long long int i = 0; i < mask.size(); i++)
+    {
+        if (mask[i] == 0)
+            continue;
+        if (B[i][col1] - B[i][col2] != B[i][col3] - B[i][col4])
+            return false;
+    }
+    return true;
+}
+
+// Consider columnar dependencies
+// C(col1) - C(col2) = C(col3) - C(col4)
+bool check_linear_dep_of_A_6(int n, const Matrix<int> B, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 0, 1, 3, 4))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 0, 1, 6, 7))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 3, 4, 6, 7))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 1, 2, 4, 5))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 1, 2, 7, 8))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 4, 5, 7, 8))
+        return true;
+    if (check_linear_dep_of_A_6_helper(n, B, mask, 0, 2, 3, 5))
+        return true;
+
+    return false;
+}
+
 void solve_for_A(int n, Matrix<int> A)
 {
     if (A.determinant() != 0)
@@ -672,6 +709,12 @@ void generate_A_matrix(int n, Matrix<int> B)
 
         after_check_5++;
         // cout << after_check_5 << endl;
+
+        if (check_linear_dep_of_A_6(n, B, mask))
+            continue;
+
+        after_check_6++;
+        // cout << after_check_6 << endl;
 
         // for (auto x : mask)
         //     cout << x;
