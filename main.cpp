@@ -13,6 +13,7 @@ long long int after_check_2 = 0;
 long long int after_check_3 = 0;
 long long int after_check_4 = 0;
 long long int after_check_5 = 0;
+long long int after_check_6 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 
@@ -39,118 +40,60 @@ void printToStdOutWithCommas(Matrix<int> A)
     cout << "]" << endl;
 }
 
-void generate_Y_matrix_helper(int n, vector<int> &curr, Matrix<int> &Y)
+void generate_X_matrix(int n, Matrix<int> &X)
 {
-    if (n == 1)
+    for (size_t p = 0; p < X.row(); p++)
     {
-        curr.push_back(1);
-        Y.push_back(curr);
-        curr.pop_back();
-        return;
+        X[p][0] = -1;
+        for (size_t k = 1; k < n; k++)
+        {
+            int power = (static_cast<int>(floor(p / pow(2, n - 1 - k)))) % 2;
+            X[p][k] = pow(-1, power + 1);
+        }
     }
-
-    curr.push_back(-1);
-    generate_Y_matrix_helper(n - 1, curr, Y);
-    curr.pop_back();
-
-    curr.push_back(1);
-    generate_Y_matrix_helper(n - 1, curr, Y);
-    curr.pop_back();
-
+    cout << "Generated HALF Matrix X successfully!!" << endl;
     return;
 }
 
-void generate_Y_matrix(int n, Matrix<int> &Y)
+void generate_Y_matrix(int n, const Matrix<int> X, Matrix<int> &Y)
 {
-    vector<int> curr;
-    generate_Y_matrix_helper(n, curr, Y);
+    long long int Y_rows = pow(2, n - 1);
+    for (size_t q = 0; q < Y_rows; q++)
+    {
+        for (int l = 0; l < n - 1; l++)
+        {
+            // int power = (static_cast<int>(floor(q / pow(2, n - 2 - l)))) % 2;
+            // Y[q][l] = pow(-1, power + 1);
+            Y[q][l] = X[q][l + 1];
+        }
+        Y[q][n - 1] = 1;
+    }
 
     cout << "Generated Matrix Y successfully!!" << endl;
     return;
 }
 
-void generate_B_matrix(int n, Matrix<int> Y, Matrix<int> &B)
+void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<int> &B)
 {
-    string filename = X_MATRIX_FOLDER + "X_" + to_string(n) + ".txt";
-    ifstream file(filename);
-
-    if (!file)
+    for (size_t i = 0; i < B.row() / 2; i++)
     {
-        cerr << "ERROR MESSAGE(generate_B_matrix):: Enable to open the file!!";
-        return;
+        int p = static_cast<int>(floor(i / pow(2, n - 1)));
+        int q = i % (static_cast<int>(pow(2, n - 1)));
+        for (size_t j = 0; j < n * n; j++)
+        {
+            int k = j % n;
+            int l = static_cast<int>(floor(j / n));
+            B[i][j] = X[p][k] * Y[q][l];
+        }
     }
 
-    long long int p = 0;
-    string line = "";
-    while (getline(file, line) && p < pow(2, n - 1))
+    for (size_t i = 0; i < B.row() / 2; i++)
     {
-        // x = X[p]
-        vector<int> x; // x -> 1 x n
-        stringstream ss(line);
-
-        int value;
-        while (ss >> value)
+        for (size_t j = 0; j < n * n; j++)
         {
-            x.push_back(value);
+            B[i + B.row() / 2][j] = -1 * B[i][j];
         }
-
-        for (long long int q = 0; q < Y.row(); q++)
-        {
-            // y = Y[q]
-            vector<int> y = Y.getRowVector(q); // y -> 1 x n
-            vector<int> b;
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = 0; j < n; j++)
-                {
-                    b.push_back(x[j] * y[i]);
-                }
-            }
-            B.push_back(b);
-        }
-        p++;
     }
-    file.close();
-
-    ifstream file2(filename);
-
-    if (!file)
-    {
-        cerr << "ERROR MESSAGE(generate_B_matrix):: Enable to open the file!!";
-        return;
-    }
-
-    p = 0;
-    line = "";
-    while (getline(file2, line) && p < pow(2, n - 1))
-    {
-        // x = X[p]
-        vector<int> x; // x -> 1 x n
-        stringstream ss(line);
-
-        int value;
-        while (ss >> value)
-        {
-            x.push_back(value);
-        }
-
-        for (long long int q = 0; q < Y.row(); q++)
-        {
-            // y = Y[q]
-            vector<int> y = Y.getRowVector(q); // y -> 1 x n
-            vector<int> b;
-            for (int i = 0; i < n; i++)
-            {
-                for (int j = 0; j < n; j++)
-                {
-                    b.push_back(-1 * x[j] * y[i]);
-                }
-            }
-            B.push_back(b);
-        }
-        p++;
-    }
-    file2.close();
 
     cout << "Generated Matrix B successfully!!" << endl;
     return;
@@ -686,6 +629,7 @@ void generate_A_matrix(int n, Matrix<int> B)
     after_check_3 = 0;
     after_check_4 = 0;
     after_check_5 = 0;
+    after_check_6 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -763,15 +707,21 @@ int main()
             n = sqrt(no_of_variables); // n*n = no_of_variables
         } while (n * n != no_of_variables);
 
+        cout << "Generating HALF matrix X..." << endl;
+        Matrix<int> X(static_cast<int>(pow(2, n - 1)), n); // X -> 2^(n) x (n)
+        generate_X_matrix(n, X);
+        cout << "HALF Matrix X::" << endl;
+        X.printToStdOut();
+
         cout << "Generating matrix Y..." << endl;
-        Matrix<int> Y(0, n); // Y -> 2^(n-1) x (n)
-        generate_Y_matrix(n, Y);
+        Matrix<int> Y(static_cast<int>(pow(2, n - 1)), n); // Y -> 2^(n-1) x (n)
+        generate_Y_matrix(n, X, Y);
         cout << "Matrix Y::" << endl;
         Y.printToStdOut();
 
         cout << "Generating matrix B..." << endl;
-        Matrix<int> B(0, no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
-        generate_B_matrix(n, Y, B);
+        Matrix<int> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
+        generate_B_matrix(n, X, Y, B);
         cout << "Matrix B::" << endl;
         B.printToStdOut();
         // printToStdOutWithCommas(B);
@@ -785,6 +735,7 @@ int main()
         cout << "No. of combinations(after check 3):: " << after_check_3 << endl;
         cout << "No. of combinations(after check 4):: " << after_check_4 << endl;
         cout << "No. of combinations(after check 5):: " << after_check_5 << endl;
+        cout << "No. of combinations(after check 6):: " << after_check_6 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
