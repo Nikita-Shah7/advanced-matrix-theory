@@ -1149,7 +1149,7 @@ numericalType Matrix<numericalType>::determinant() const
 		return 0;
 	numericalType det = 1;
 #ifdef _USING_OMP_
-#pragma omp parallel for redustion(*:det)
+#pragma omp parallel for reduction(*:det)
 #endif
 	for (size_t i = 0; i < U.row(); ++i) 
 		det *= U[i][i];
@@ -2518,7 +2518,7 @@ double Matrix<numericalType>::angleBetween(numericalType* row1, const size_t& si
 
 	// Calculating a*b
 #ifdef _USING_OMP_
-#pragma omp parallel for redution(+:cosTheta)
+#pragma omp parallel for reduction(+:cosTheta)
 #endif
 	for (unsigned i = 0; i < size1; i++)
 		cosTheta += static_cast<double>(row1[i] * row2[i]);
