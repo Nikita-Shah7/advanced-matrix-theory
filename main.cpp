@@ -12,7 +12,6 @@ long long int after_check_2 = 0;
 long long int after_check_3 = 0;
 long long int after_check_4 = 0;
 long long int after_check_5 = 0;
-long long int after_check_6 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 
@@ -209,7 +208,9 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
         // If the pivot is zero, the matrix is singular
         if (augmented[pivotRow][i] == 0)
         {
-            throw std::runtime_error("Matrix is singular or nearly singular!");
+            // throw std::runtime_error("Matrix is singular or nearly singular!");
+            cout << "Matrix is singular or nearly singular!" << endl;
+            return {};
         }
 
         // Swap rows if necessary
@@ -264,6 +265,9 @@ Matrix<double> generate_T_matrix(int n, Matrix<double> t)
 
 bool check_condition_for_T(int n, Matrix<int> X, Matrix<double> t)
 {
+    if (t.size() == 0)
+        return false;
+
     // Generate matrix T from t
     Matrix<double> T = generate_T_matrix(n, t);
 
@@ -654,6 +658,36 @@ bool check_linear_dep_of_A_6(int n, const Matrix<double> B, vector<bool> mask)
     return false;
 }
 
+// check if all entries of a column are same(i.e. all are 1 or -1)
+bool check_linear_dep_of_A_7(int n, const Matrix<double> B, vector<bool> mask)
+{
+    for (int col = 0; col < B.col(); col++)
+    {
+        bool is_same = true;
+        int val = 0;
+        size_t row = 0;
+        for (; row < B.row(); row++)
+        {
+            if (mask[row])
+            {
+                val = B[row][col];
+                break;
+            }
+        }
+        for (; row < B.row(); row++)
+        {
+            if (mask[row] && B[row][col] != val)
+            {
+                is_same = false;
+                break;
+            }
+        }
+        if (is_same)
+            return true;
+    }
+    return false;
+}
+
 void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
 {
     if (A.determinant() != 0)
@@ -682,7 +716,6 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
     after_check_3 = 0;
     after_check_4 = 0;
     after_check_5 = 0;
-    after_check_6 = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
@@ -736,12 +769,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
 
                 after_check_5++;
                 // cout << after_check_5 << endl;
-
-                // if (check_linear_dep_of_A_6(n, B, mask))
-                //     continue;
-
-                // after_check_6++;
-                // // cout << after_check_6 << endl;
+                
 
                 // for (auto x : mask)
                 //     cout << x;
@@ -759,7 +787,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
 
             }
         }
-        // cout << total_permutations1 << " " << total_permutations2 << endl;
+        // cout << ones2 << " " << total_permutations1 << " " << total_permutations2 << endl;
     }
     cout << "Generated Matrices A successfully!!" << endl;
 }
@@ -805,7 +833,6 @@ int main()
         cout << "No. of combinations(after check 3):: " << after_check_3 << endl;
         cout << "No. of combinations(after check 4):: " << after_check_4 << endl;
         cout << "No. of combinations(after check 5):: " << after_check_5 << endl;
-        cout << "No. of combinations(after check 6):: " << after_check_6 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
