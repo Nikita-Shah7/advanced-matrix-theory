@@ -864,6 +864,8 @@ public:
 	// - U: Reference to a Matrix object where the U matrix will be stored.
 	// Returns: None. The L and U matrices are output parameters that are filled by the function.
 	long long int luDecomposition(Matrix<numericalType>& L, Matrix<numericalType>& U) const;
+	long long int luDecomposition(Matrix<numericalType>& U) const;
+	numericalType determinantBareiss() const;
 
 	// organizeDecreasing: Reorganizes the matrix rows so that they are in decreasing order based on a specified criterion.
 	// Parameters: None.

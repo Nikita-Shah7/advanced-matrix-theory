@@ -1,11 +1,22 @@
 #include "matrix.hpp"
 #include <bits/stdc++.h>
+#include <windows.h>
+#include <psapi.h>
 using namespace std;
 
 string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
+
+void printMemoryUsage()
+{
+    PROCESS_MEMORY_COUNTERS memCounter;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &memCounter, sizeof(memCounter)))
+    {
+        std::cout << "Memory usage: " << memCounter.WorkingSetSize / 1024 << " KB\n";
+    }
+}
 
 void print_vector(vector<int> v)
 {
@@ -14,7 +25,8 @@ void print_vector(vector<int> v)
     cout << endl;
 }
 
-void printToStdOutWithCommas(Matrix<double> A)
+template <typename T>
+void printToStdOutWithCommas(Matrix<T> A)
 {
     cout << "[" << endl;
     for (unsigned i = 0; i < A.row(); ++i)
@@ -100,7 +112,7 @@ void generate_Y_matrix(int n, const Matrix<int> X, Matrix<int> &Y)
     return;
 }
 
-void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<double> &B)
+void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<int> &B)
 {
     for (size_t i = 0; i < B.row() / 2; i++)
     {
@@ -126,7 +138,7 @@ void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<d
     return;
 }
 
-void print_solution_matrix(int n, Matrix<double> t)
+void print_solution_matrix(int n, Matrix<float> t)
 {
     string filename = SOLUTION_SET_FOLDER + "sol_set_" + to_string(n) + ".txt";
     // Open the file in append mode
@@ -146,7 +158,7 @@ void print_solution_matrix(int n, Matrix<double> t)
     file.close();
 }
 
-void print_solution_matrix(Matrix<double> A, Matrix<double> t)
+void print_solution_matrix(Matrix<int> A, Matrix<float> t)
 {
     std::cout << "[" << std::endl;
     for (unsigned i = 0; i < A.row(); ++i)
@@ -164,27 +176,27 @@ void print_solution_matrix(Matrix<double> A, Matrix<double> t)
 }
 
 // Create augmented matrix: [ A | 1 ]
-Matrix<double> matrix_augmentation(Matrix<double> A)
+Matrix<float> matrix_augmentation(Matrix<int> A)
 {
     int A_row = A.row();
     int A_col = A.col();
-    Matrix<double> augmented(A_row, A_col + 1);
+    Matrix<float> augmented(A_row, A_col + 1);
 
     for (size_t i = 0; i < A_row; ++i)
     {
         for (size_t j = 0; j < A_col; ++j)
         {
-            augmented[i][j] = static_cast<double>(A[i][j]);
+            augmented[i][j] = static_cast<float>(A[i][j]);
         }
-        augmented[i][A_col] = static_cast<double>(1);
+        augmented[i][A_col] = static_cast<float>(1);
     }
     return augmented;
 }
 
-Matrix<double> gaussian_elimination(Matrix<double> A)
+Matrix<float> gaussian_elimination(Matrix<int> A)
 {
     size_t n = A.row();
-    Matrix<double> augmented = matrix_augmentation(A);
+    Matrix<float> augmented = matrix_augmentation(A);
 
     // Forward Elimination with Partial Pivoting
     for (size_t i = 0; i < n; ++i)
@@ -224,7 +236,7 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
     }
 
     // Back Substitution
-    Matrix<double> t(n, 1);
+    Matrix<float> t(n, 1);
     for (int i = n - 1; i >= 0; --i)
     {
         t[i][0] = augmented[i][n];
@@ -239,13 +251,13 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
 }
 
 // Generate matrix T from t
-Matrix<double> generate_T_matrix(int n, Matrix<double> t)
+Matrix<float> generate_T_matrix(int n, Matrix<float> t)
 {
-    Matrix<double> T(0, n);
+    Matrix<float> T(0, n);
 
     for (size_t i = 0; i < t.row();)
     {
-        vector<double> v;
+        vector<float> v;
         for (size_t j = 0; j < n; j++, i++)
         {
             v.push_back(t[i][0]);
@@ -255,36 +267,48 @@ Matrix<double> generate_T_matrix(int n, Matrix<double> t)
     return T;
 }
 
-bool check_condition_for_T(int n, Matrix<int> X, Matrix<double> t)
+bool l1NormCondition(int n, Matrix<float> T, vector<int> x)
+{
+    Matrix<float> Tx(n, 1);
+	
+	for (size_t i = 0; i < n; ++i) 
+	{
+		float sum = 0;
+        for (size_t k = 0; k < n; ++k) 
+        {
+            sum += T[i][k] * x[k];
+        }
+        Tx[i][0] = sum;
+	}
+
+    return (Tx.l1Norm() <= 1);
+}
+
+bool check_condition_for_T(int n, Matrix<int> X, Matrix<float> t)
 {
     if (t.size() == 0)
         return false;
 
     // Generate matrix T from t
-    Matrix<double> T = generate_T_matrix(n, t);
+    Matrix<float> T = generate_T_matrix(n, t);
 
     for (size_t p = 0; p < X.row(); p++)
     {
-        Matrix<double> x(n, 1); // x -> 1 x n
-
-        for (int k = 0; k < n; k++)
-            x[k][0] = X[p][k];
-
-        if ((T * x).l1Norm() > 1)
+        if (!l1NormCondition(n, T, X.getRowVector(p)))
             return false;
     }
     return true;
 }
 
-void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
+void solve_for_A(int n, Matrix<int> X, Matrix<int> A)
 {
-    if (A.determinant() != 0)
+    // if (A.determinant() != 0)
     {
         non_zero_det_A++;
 
         // printToStdOutWithCommas(A);
         // A.printToStdOut();
-        Matrix<double> t = gaussian_elimination(A);
+        Matrix<float> t = gaussian_elimination(A);
         if (check_condition_for_T(n, X, t))
         {
             unique_sol_sys++;
@@ -296,15 +320,98 @@ void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
     return;
 }
 
-bool check_linear_dep_of_X(int n, vector<bool> mask)
+bool check_linear_dep_of_X_1(int n, vector<bool> mask)
 {
-
     for (size_t idx = 0; idx < mask.size() / 2; idx++)
     {
         if ((mask[idx] == 1) && (mask[idx + (mask.size() / 2)] == 1))
             return true;
     }
 
+    return false;
+}
+
+bool check_linear_dep_of_X_helper(int idx, vector<bool> mask)
+{
+    if ((mask[idx] == 1) || (mask[idx + (mask.size() / 2)] == 1))
+        return true;
+
+    return false;
+}
+
+bool check_linear_dep_of_X_2(int n, vector<bool> mask)
+{
+    if (n < 4)
+        return false;
+
+    for (size_t i = 0; i < mask.size() / 2; i += 4)
+    {
+        if (check_linear_dep_of_X_helper(i, mask) &&
+            check_linear_dep_of_X_helper(i + 1, mask) &&
+            check_linear_dep_of_X_helper(i + 2, mask) &&
+            check_linear_dep_of_X_helper(i + 3, mask))
+            return true;
+    }
+    return false;
+}
+
+bool check_linear_dep_of_X_3(int n, vector<bool> mask)
+{
+    if (n < 3)
+        return false;
+
+    long long int step = pow(2, n - 3);
+
+    for (long long int i = 0; i < ((mask.size() / 2) - (3 * step)); i++)
+    {
+        // p%2=0 should be satisfied where p is for pth row of X
+        // long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        // if (p % 1)
+        //     continue;
+        if (check_linear_dep_of_X_helper(i, mask) &&
+            check_linear_dep_of_X_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_X_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_X_helper(i + 3 * step, mask))
+            return true;
+    }
+    return false;
+}
+
+bool check_linear_dep_of_Y_1(int n, vector<bool> mask)
+{
+    if (n < 4)
+        return false;
+
+    for (size_t i = 0; i < mask.size(); i += 4)
+    {
+        if (mask[i] &&
+            mask[i + 1] &&
+            mask[i + 2] &&
+            mask[i + 3])
+            return true;
+    }
+    return false;
+}
+
+bool check_linear_dep_of_Y_2(int n, vector<bool> mask)
+{
+    if (n < 3)
+        return false;
+
+    long long int step = pow(2, n - 3);
+
+    for (long long int i = 0; i < (mask.size() - (3 * step)); i++)
+    {
+        // p%2=0 should be satisfied where p is for pth row of X
+        // long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        // if (p % 1)
+        //     continue;
+        if (mask[i] &&
+            mask[i + 1 * step] &&
+            mask[i + 2 * step] &&
+            mask[i + 3 * step])
+            return true;
+    }
     return false;
 }
 
@@ -319,7 +426,14 @@ vector<vector<int>> generate_indep_for_X(int n)
     for (long int combination = 0; combination < total_combinations_x; combination++)
     {
         vector<bool> mask_x = generate_permutation(x_rows, n, combination);
-        if (check_linear_dep_of_X(n, mask_x))
+
+        if (check_linear_dep_of_X_1(n, mask_x))
+            continue;
+
+        if (check_linear_dep_of_X_2(n, mask_x))
+            continue;
+
+        if (check_linear_dep_of_X_3(n, mask_x))
             continue;
 
         vector<int> tmp;
@@ -345,8 +459,12 @@ vector<vector<int>> generate_indep_for_Y(int n)
     for (long int combination = 0; combination < total_combinations_y; combination++)
     {
         vector<bool> mask_y = generate_permutation(y_rows, n, combination);
-        // if (check_linear_dep_of_Y(n, mask_y))
-        //     continue;
+
+        if (check_linear_dep_of_Y_1(n, mask_y))
+            continue;
+
+        if (check_linear_dep_of_Y_2(n, mask_y))
+            continue;
 
         vector<int> tmp;
         for (long int i = 0; i < mask_y.size(); i++)
@@ -366,7 +484,7 @@ vector<vector<int>> generate_indep_for_Y(int n)
     return y_indep_index;
 }
 
-void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
+void generate_A_matrix(int n, Matrix<int> X, Matrix<int> B)
 {
     no_of_combinations = 0;
     non_zero_det_A = 0;
@@ -394,7 +512,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
             no_of_combinations++;
             // cout << no_of_combinations << endl;
 
-            Matrix<double> A(0, n * n);
+            Matrix<int> A(0, n * n);
             for (int j = 0; j < n; j++)
             {
                 int q = y_indep_index[y_indep_ind][j];
@@ -431,6 +549,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
 
 int main()
 {
+    auto start = chrono::high_resolution_clock::now();
     try
     {
         long long int no_of_variables = 4;
@@ -455,7 +574,7 @@ int main()
         // Y.printToStdOut();
 
         cout << "Generating matrix B..." << endl;
-        Matrix<double> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
+        Matrix<int> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
         generate_B_matrix(n, X, Y, B);
         cout << "Matrix B::" << endl;
         // B.printToStdOut();
@@ -471,6 +590,11 @@ int main()
     {
         cerr << "ERROR MESSAGE(in main()):: An exception occurred: " << e.what() << endl;
     }
+
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    cout << "Execution Time: " << duration << " ns" << endl;
+    printMemoryUsage();
 
     return 0;
 }

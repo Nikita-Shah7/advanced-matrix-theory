@@ -845,6 +845,53 @@ long long int Matrix<numericalType>::luDecomposition(Matrix<numericalType>& L, M
 }
 
 template<typename numericalType>
+long long int Matrix<numericalType>::luDecomposition(Matrix<numericalType>& U) const
+{
+	if (!isSquare())
+		throw std::runtime_error("Cannot perform LU decomposition on non-square matrix!");
+
+	unsigned n = _row;
+		
+	if (n == 1)
+		return matrix[0][0];
+
+	U = *this; // Copy the current matrix to U
+
+	int rowSwaps = 0;
+	for (unsigned i = 0; i < n; ++i)
+	{
+		unsigned pivotRow = i;
+
+		for (unsigned j = i + 1; j < n; j++)
+		{
+			if (std::abs(U[j][i]) > std::abs(U[pivotRow][i]))
+				pivotRow = j;
+		}
+
+		if (pivotRow != i)
+		{
+			std::swap(U.matrix[i], U.matrix[pivotRow]);
+			rowSwaps++; // Each row swap changes determinant sign
+		}
+
+		if (U[i][i] == 0)
+			return 0; // Singular matrix case
+
+		numericalType invPivot = 1.0 / U[i][i]; // Precompute inverse for optimization
+
+		for (unsigned j = i + 1; j < n; j++)
+		{
+			numericalType factor = U[j][i] * invPivot; // Avoid direct division
+			for (unsigned k = i; k < n; k++)
+			{
+				U[j][k] -= factor * U[i][k];
+			}
+		}
+	}
+	return rowSwaps;
+}
+
+template<typename numericalType>
 Matrix<numericalType> Matrix<numericalType>::organizeDecreasing() const
 {
 	// Find leading elements of each row
@@ -1124,6 +1171,45 @@ unsigned Matrix<numericalType>::rank() const
 	return r;
 }
 
+template <typename numericalType>
+numericalType Matrix<numericalType>::determinantBareiss() const
+{
+	int n = _row;
+	if (n == 1)
+		return matrix[0][0];
+
+	Matrix<numericalType> A(*this); // Copy matrix for in-place modification
+	numericalType prevPivot = 1;
+
+	for (unsigned i = 0; i < n; i++)
+	{
+		// **Partial Pivoting for Stability**
+		unsigned pivotRow = i;
+		for (unsigned j = i + 1; j < n; j++)
+		{
+			if (std::abs(A[j][i]) > std::abs(A[pivotRow][i]))
+				pivotRow = j;
+		}
+		if (pivotRow != i)
+			std::swap(A.matrix[i], A.matrix[pivotRow]);
+
+		numericalType pivot = A[i][i];
+		if (pivot == 0)
+			return 0; // Singular matrix case
+
+		// **Update Remaining Rows**
+		for (unsigned j = i + 1; j < n; j++)
+		{
+			for (unsigned k = i + 1; k < n; k++)
+			{
+				A[j][k] = (A[j][k] * pivot - A[j][i] * A[i][k]) / prevPivot;
+			}
+		}
+		prevPivot = pivot;
+	}
+	return A[n - 1][n - 1]; // Determinant is the last pivot
+}
+
 template<typename numericalType>
 numericalType Matrix<numericalType>::determinant() const 
 {
@@ -1142,8 +1228,13 @@ numericalType Matrix<numericalType>::determinant() const
 		return det;
 	}
 
-	Matrix<numericalType> L, U;
-	long long int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
+	// Matrix<numericalType> L, U;
+	// long long int rowSwaps = luDecomposition(L, U); // Feltételezve, hogy ez a függvény nem változtatja meg az eredeti mátrixot
+
+	Matrix<numericalType> U;
+	long long int rowSwaps = luDecomposition(U);
+
+	// return determinantBareiss();
 
 	if (rowSwaps == -1)
 		return 0;
