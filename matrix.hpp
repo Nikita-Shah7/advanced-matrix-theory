@@ -50,7 +50,8 @@ template<typename numericalType>
 class Matrix
 {
 private:
-	numericalType** matrix;	// Represents the matrix
+	// numericalType** matrix;	// Represents the matrix
+	std::vector<std::vector<numericalType>> matrix;
 	size_t _row;			// Number of rows in the matrix
 	size_t _col;			// Number of columns in the matrix
 
@@ -60,99 +61,105 @@ public:
 	// Default constructor: Initializes an empty matrix.
 	// Parameters: None
 	// Returns: An instance of a Matrix object with no elements.
-	Matrix() : matrix(nullptr), _row(0), _col(0), _symmetric(false) {}
+	// Matrix() : matrix(nullptr), _row(0), _col(0), _symmetric(false) {}
+	Matrix() : _row(0), _col(0), _symmetric(false) {}
 	
 	// Parameterized constructor: Initializes a matrix of size r x c, filled with default values of numericalType.
 	// Parameters:
 	// - r: Number of rows in the matrix.
 	// - c: Number of columns in the matrix.
 	// Returns: An instance of a Matrix object with specified dimensions, filled with default values.
-	Matrix(const size_t& r, const size_t& c) : _row(r), _col(c), _symmetric(false)
-	{
-		matrix = new numericalType*[_row];
-		for (unsigned i = 0; i < _row; i++)
-			matrix[i] = new numericalType[_col];
+	Matrix(const size_t& r, const size_t& c) : _row(r), _col(c), _symmetric(false), matrix(r, std::vector<numericalType>(c)) {}
+	// {
+	// 	matrix = new numericalType*[_row];
+	// 	for (unsigned i = 0; i < _row; i++)
+	// 		matrix[i] = new numericalType[_col];
 
-		for(unsigned i = 0; i < _row; i++)
-		for (unsigned j = 0; j < _col; j++)		// Initialize to zero or some default value
-			matrix[i][j] = numericalType{};		// Make sure numericalType can be value-initialized
-	}
+	// 	for(unsigned i = 0; i < _row; i++)
+	// 	for (unsigned j = 0; j < _col; j++)		// Initialize to zero or some default value
+	// 		matrix[i][j] = numericalType{};		// Make sure numericalType can be value-initialized
+	// }
+
+	numericalType& operator()(size_t i, size_t j) { return matrix[i][j]; }
+    const numericalType& operator()(size_t i, size_t j) const { return matrix[i][j]; }
 	
 	// Initializer list constructor: Initializes a matrix with the specified values.
 	// Parameters:
 	// - init: An initializer list of initializer lists containing elements of type numericalType.
 	// Returns: An instance of a Matrix object initialized with the specified values.
-	Matrix(std::initializer_list<std::initializer_list<numericalType>> init) 
-	{
-		_row = init.size();
-		_col = (init.begin())->size();
+	// Matrix(std::initializer_list<std::initializer_list<numericalType>> init) 
+	// {
+	// 	_row = init.size();
+	// 	_col = (init.begin())->size();
 
-		matrix = new numericalType*[_row];
-		for (size_t i = 0; i < _row; i++)
-			matrix[i] = new numericalType[_col];
+	// 	matrix = new numericalType*[_row];
+	// 	for (size_t i = 0; i < _row; i++)
+	// 		matrix[i] = new numericalType[_col];
 
-		size_t i = 0;
-		for (auto& rowList : init) 
-		{
-			if (rowList.size() != _col)
-				throw std::invalid_argument("All rows must have the same number of columns");
-			size_t j = 0;
-			for (auto& elem : rowList) 
-				matrix[i][j++] = elem;
-			++i;
-		}
-		if (isSymmetric())_symmetric = true;
-	}
+	// 	size_t i = 0;
+	// 	for (auto& rowList : init) 
+	// 	{
+	// 		if (rowList.size() != _col)
+	// 			throw std::invalid_argument("All rows must have the same number of columns");
+	// 		size_t j = 0;
+	// 		for (auto& elem : rowList) 
+	// 			matrix[i][j++] = elem;
+	// 		++i;
+	// 	}
+	// 	if (isSymmetric())_symmetric = true;
+	// }
 	
 	// Copy constructor: Creates a new matrix as a deep copy of an existing matrix.
 	// Parameters:
 	// - other: A reference to the Matrix object to be copied.
 	// Returns: An instance of a Matrix object that is a deep copy of the specified matrix.
-	Matrix(const Matrix& other) : _row(other._row), _col(other._col), _symmetric(other._symmetric)
-	{
-		// Allocating memory
-		matrix = new numericalType * [_row];
-		for (size_t i = 0; i < _row; ++i) 
-		{
-			for (unsigned j = 0; j < _row; j++)
-				matrix[i] = new numericalType[_col];
-		}
+	// Matrix(const Matrix& other) : _row(other._row), _col(other._col), _symmetric(other._symmetric)
+	// {
+	// 	// Allocating memory
+	// 	matrix = new numericalType * [_row];
+	// 	for (size_t i = 0; i < _row; ++i) 
+	// 	{
+	// 		for (unsigned j = 0; j < _row; j++)
+	// 			matrix[i] = new numericalType[_col];
+	// 	}
 
-		// Copiing data
-		for (unsigned i = 0; i < _row; i++)
-			for (unsigned j = 0; j < _col; j++)
-				matrix[i][j] = other[i][j];
-	}
+	// 	// Copiing data
+	// 	for (unsigned i = 0; i < _row; i++)
+	// 		for (unsigned j = 0; j < _col; j++)
+	// 			matrix[i][j] = other[i][j];
+	// }
+	Matrix(const Matrix& other) : _row(other._row), _col(other._col), _symmetric(other._symmetric), matrix(other.matrix) {}
 	
 	// Destructor: Cleans up the resources used by the matrix, deallocating any dynamic memory.
 	// Parameters: None
 	// Returns: None
 	~Matrix()
 	{
-		for (unsigned i = 0; i < _row; i++)
-			delete[] matrix[i];
-		delete[] matrix;
+		// for (unsigned i = 0; i < _row; i++)
+		// 	delete[] matrix[i];
+		// delete[] matrix;
+		matrix.clear();
 	}
 
 	// getMatrix: Retrieves the raw pointer to the matrix's underlying array.
 	// Parameters: None
 	// Returns: A double pointer to numericalType, representing the raw 2D array of the matrix's elements.
-	numericalType** getMatrix() const { return matrix; }
+	const std::vector<std::vector<numericalType>>& getMatrix() const { return matrix; }
 
 	// setMatrix: Sets the matrix's underlying array to the specified raw pointer. (Use with caution; can lead to memory leaks if not handled properly)
 	// Parameters:
 	// - pMatrix: A double pointer to numericalType, representing a new 2D array to be used as the matrix's elements.
 	// Returns: None
-	void setMatrix(numericalType** pMatrix) { matrix = pMatrix; }
+	void setMatrix(const std::vector<std::vector<numericalType>>& pMatrix) { matrix = pMatrix; }
 	
 	// getRow: Retrieves a pointer to the specified row.
 	// Parameters:
 	// - rowNum: The index of the row to retrieve.
 	// Returns: A pointer to numericalType, representing the specified row's elements.
-	numericalType* getRow(const size_t& rowNum) 
+	std::vector<numericalType> getRow(const size_t& rowNum) 
 	{
 		if (rowNum > _row)
-			return nullptr; 
+			return {}; 
 		else 
 			return matrix[rowNum];
 	}
@@ -176,13 +183,17 @@ public:
 	// Parameters:
 	// - colNum: The index of the column to retrieve.
 	// Returns: A pointer to numericalType, representing the start of the specified column.
-	numericalType* getCol(const size_t& colNum) 
+	std::vector<numericalType> getCol(const size_t& colNum) const 
 	{
-		if (colNum > _col)
-			throw std::runtime_error("Cannot return col, since it is out of bounds!");
-
-		return &matrix[0][colNum];
-	}
+        if (colNum >= _col)
+            throw std::out_of_range("Column index out of range");
+        
+        std::vector<numericalType> column(_row);
+        for (size_t i = 0; i < _row; ++i) {
+            column[i] = matrix[i][colNum];
+        }
+        return column;
+    }
 
 	// getColVector: Constructs and returns a vector representing the specified column.
 	// Parameters:
@@ -205,14 +216,18 @@ public:
 	// - rowNum: The index of the row to be set.
 	// - rowSize: The size of newRow array; should match the number of columns in the matrix.
 	// Returns: A boolean indicating success (true) or failure (false) of the operation.
-	bool setRow(numericalType* newRow, const size_t& rowNum, const size_t& rowSize) 
+	bool setRow(std::vector<numericalType> newRow, const size_t& rowNum, const size_t& rowSize) 
 	{
 		if (rowSize != _col)
 		{
 			throw std::runtime_error("Cannot change row if not the same size");
 			return false;
 		}
-		else if (rowNum >= _row) throw std::runtime_error("Cannot set row, index out of bounds!");
+		else if (rowNum >= _row) 
+		{
+			throw std::runtime_error("Cannot set row, index out of bounds!");
+			return false;
+		}
 		else 
 		{ 
 			// Overwriting matrix's row
@@ -229,20 +244,7 @@ public:
 	// Returns: A boolean indicating success (true) or failure (false) of the operation.
 	bool setRow(const vector<numericalType>& newRow, const size_t& rowNum)
 	{ 
-		if (newRow.size() != _row) 
-		{
-			throw std::runtime_error("Cannot change row if not the same size"); 
-			return false;
-		}
-		else
-		{
-			// Copiing vector elements
-			numericalType* nRow = new numericalType[_row];
-			for (unsigned i = 0; i < _row; i++)
-				nRow[i] = newRow[i];
-
-			return setRow(nRow, rowNum, _row);
-		}
+		return setRow(newRow, rowNum, newRow.size());
 	}
 
 	// setCol: Sets a specific column to the values specified in a vector.
@@ -250,12 +252,15 @@ public:
 	// - colIdx: Index of the column to be modified.
 	// - vec: Vector containing the new values for the column.
 	// Returns: None.
-	void setCol(const size_t& colIdx, const vector<numericalType> vec)
+	void setCol(const size_t &colNum, const vector<numericalType> vec)
 	{
-		if (colIdx >= _col) throw std::runtime_error("Column index out of bounds, cannot set columns!");
+		if (vec.size() != _col)
+			throw std::runtime_error("Cannot change column if not the same size");
+		if (isColIdxOutOfBound(colNum))
+			throw std::runtime_error("Column index out of bounds, cannot set columns!");
 
 		for (unsigned i = 0; i < _row; i++)
-			matrix[i][colIdx] = vec[i];
+			matrix[i][colNum] = vec[i];
 	}
 
 	// setCol: Sets a specific column to the values specified in an array.
@@ -264,12 +269,9 @@ public:
 	// - size: Number of elements in the vec array.
 	// - colIdx: Index of the column to be modified.
 	// Returns: None.
-	void setCol(numericalType* vec, const size_t& size, const size_t& colIdx)
+	void setCol(const std::vector<numericalType> vec, const size_t&colSize, const size_t &colNum)
 	{
-		if (size >= _row) throw std::runtime_error("Vector too long, cannot insert new column!");
-
-		for (unsigned i = 0; i < _row; i++)
-			matrix[i][colIdx] = vec[i];
+		setCol(colNum, vec);
 	}
 
 	// areOrthogonal: Checks if two rows are orthogonal to each other.
@@ -285,7 +287,7 @@ public:
 	// - size: Size of this row.
 	// - rowIdx: The index of the row in the matrix that should be comapred.
 	// Returns: True if the two rows are orthogonal false otherwise.
-	bool areOrthogonal(numericalType* row, const size_t& size, const size_t& rowIdx) const { return (0 == dotProduct(row, size, rowIdx)); }
+	bool areOrthogonal(std::vector<numericalType> row, const size_t& size, const size_t& rowIdx) const { return (0 == dotProduct(row, size, rowIdx)); }
 
 	// areOrthogonal (vector version): Checks if the given row vector is orthogonal to a specific row in the matrix.
 	// Parameters:
@@ -413,7 +415,7 @@ public:
 	// - vec: A pointer to an array of numericalType representing the column vector to check.
 	// - size: The size of the array pointed to by vec.
 	// Returns: True if vec is in the column space of the matrix, false otherwise.
-	bool isColumnVector(numericalType* vec, const size_t& size) const;
+	bool isColumnVector(const std::vector<numericalType> vec, const size_t& size) const;
 
 	// isRowVector (vector version): Checks if a given vector is in the row space of the matrix.
 	// Parameters:
@@ -426,7 +428,7 @@ public:
 	// - vec: A pointer to an array of numericalType representing the row vector to check.
 	// - size: The size of the array pointed to by vec.
 	// Returns: True if vec is in the row space of the matrix, false otherwise.
-	bool isRowVector(numericalType* vec, const size_t& size) const;
+	bool isRowVector(const std::vector<numericalType>& vec, const size_t& size) const;
 
 	// isLinearlyIndependent (row index version): Checks if two specified rows in the matrix are linearly independent.
 	// Parameters:
@@ -441,7 +443,7 @@ public:
 	// - size: Size of the array representing the external row.
 	// - rowIdx: Index of the row in the matrix.
 	// Returns: True if the matrix row and the external row are linearly independent, false otherwise.
-	bool isLinearlyIndependent(numericalType* row, const size_t& size, const size_t& rowIdx) const;
+	bool isLinearlyIndependent(const std::vector<numericalType>& row, const size_t& size, const size_t& rowIdx) const;
 
 	// isLinearlyIndependent (vector version): Checks if the specified row in the matrix and an external row represented as a vector are linearly independent.
 	// Parameters:
@@ -457,7 +459,7 @@ public:
 	// - row2: Pointer to the second array of numericalType representing the second vector.
 	// - row2Size: The size of the second vector.
 	// Returns: True if the vectors are linearly independent, false otherwise.
-	bool isLinearlyIndependent(numericalType* row1, const size_t& row1Size, numericalType* row2, const size_t& row2Size) const;
+	bool isLinearlyIndependent(const std::vector<numericalType>& row1, const size_t& row1Size, const std::vector<numericalType>& row2, const size_t& row2Size) const;
 
 	// isLinearlyIndependent (vector version): Checks if two vectors are linearly independent.
 	// Parameters:
@@ -567,7 +569,7 @@ public:
 	// - size2: The size of the subThis array.
 	// Returns: A pointer to a dynamically allocated array of numericalType containing the result of the subtraction.
 	// Note: The caller is responsible for deleting the returned array to avoid memory leaks.
-	numericalType* subtractRow(numericalType* subFrom, const size_t& size1, numericalType* subThis, const size_t& size2) const;
+	std::vector<numericalType> subtractRow(const std::vector<numericalType>& subFrom, const size_t& size1, const std::vector<numericalType>& subThis, const size_t& size2) const;
 
 	// subtractRow (vector version): Subtracts one row vector from another.
 	// Parameters:
@@ -575,7 +577,7 @@ public:
 	// - subThis: The vector representing the row to subtract.
 	// Returns: A pointer to a dynamically allocated array of numericalType containing the result of the subtraction.
 	// Note: The caller is responsible for deleting the returned array to avoid memory leaks.
-	numericalType* subtractRow(const vector<numericalType>& subFrom, const vector<numericalType>& subThis) const;
+	std::vector<numericalType> subtractRow(const vector<numericalType>& subFrom, const vector<numericalType>& subThis) const;
 
 	// subtractRowVector (array version): Subtracts one row from another, both represented as arrays, and returns the result as a vector.
 	// Parameters:
@@ -584,7 +586,7 @@ public:
 	// - subThis: The array representing the row to subtract.
 	// - size2: The size of the subThis array.
 	// Returns: A vector of numericalType containing the result of the subtraction.
-	vector<numericalType> subtractRowVector(numericalType* subFrom, const size_t& size1, numericalType* subThis, const size_t& size2) const;
+	vector<numericalType> subtractRowVector(const std::vector<numericalType> subFrom, const size_t& size1, const std::vector<numericalType> subThis, const size_t& size2) const;
 
 	// subtractRowVector (vector version): Subtracts one row vector from another and returns the result as a vector.
 	// Parameters:
@@ -606,7 +608,7 @@ public:
 	// - size: Size of the array representing the external row.
 	// - rowIdx: Index of the row in the matrix.
 	// Returns: The dot product as a numericalType value.
-	numericalType dotProduct(numericalType* vec, const size_t& size, const size_t& rowIdx) const;
+	numericalType dotProduct(const std::vector<numericalType> vec, const size_t& size, const size_t& rowIdx) const;
 
 	// dotProduct (row and vector version): Calculates the dot product between a matrix row and an external row represented as a vector.
 	// Parameters:
@@ -629,7 +631,7 @@ public:
 	// - vec2: Pointer to the second array of numericalType representing the second vector.
 	// - size2: The size of the second vector.
 	// Returns: The dot product of the two vectors as a numericalType value.
-	numericalType dotProduct(numericalType* vec1, const size_t& size1, numericalType* vec2, const size_t& size2) const;
+	numericalType dotProduct(const std::vector<numericalType> vec1, const size_t& size1, const std::vector<numericalType> vec2, const size_t& size2) const;
 
 	// rowAbs: Calculates the Euclidean norm of a specified row.
 	// Parameters:
@@ -642,7 +644,7 @@ public:
 	// - row: The vector that you want to calculate norm of.
 	// - size: Size of the vector
 	// Returns: The Euclidean norm of the row.
-	numericalType rowAbs(numericalType* row, const size_t& size) const;
+	numericalType rowAbs(const std::vector<numericalType> row, const size_t& size) const;
 
 	// rowAbs (vector version): Calculates the Euclidean norm of a specified row.
 	// Parameters:
@@ -669,7 +671,7 @@ public:
 	// - rowSize: The size of the array representing the other row.
 	// - distanceFromIdx: The index of the matrix row from which the distance is calculated.
 	// Returns: The distance as a numericalType value between the matrix row and the external row vector.
-	numericalType distanceFromRow(numericalType* otherROw, const size_t& rowSize, const size_t& distanceFromIdx) const;
+	numericalType distanceFromRow(const std::vector<numericalType> otherROw, const size_t& rowSize, const size_t& distanceFromIdx) const;
 
 	// distanceFromRow (vector version): Calculates the distance from a given matrix row to an external row represented as a vector.
 	// Parameters:
@@ -691,7 +693,7 @@ public:
 	// - colSize: The size of the array representing the other column.
 	// - distanceFromIdx: The index of the matrix column from which the distance is calculated.
 	// Returns: The distance as a numericalType value between the matrix column and the external column vector.
-	numericalType distanceFromCol(numericalType* otherCol, const size_t& colSize, const size_t& distanceFromIdx) const;
+	numericalType distanceFromCol(const std::vector<numericalType> otherCol, const size_t& colSize, const size_t& distanceFromIdx) const;
 
 	// distanceFromCol (vector version): Calculates the distance from a given matrix column to an external column represented as a vector.
 	// Parameters:
@@ -713,13 +715,13 @@ public:
 	// Parameters:
 	// - index: The index of the row to access.
 	// Returns: A pointer to the row allowing modification.
-	numericalType* operator[](const size_t& index) { return matrix[index];}				// Operator[] to return row
+	std::vector<numericalType>& operator[](const size_t& index) { return matrix[index];}				// Operator[] to return row
 
 	// operator[] (const): Provides read-only access to a specific row of the matrix.
 	// Parameters:
 	// - index: The index of the row to access.
 	// Returns: A const pointer to the row, preventing modification.
-	const numericalType* operator[](const size_t& index) const { return matrix[index];}	// Const version of operator[] for read-only access
+	const std::vector<numericalType>& operator[](const size_t& index) const { return matrix[index];}	// Const version of operator[] for read-only access
 
 	// operator=: Assigns the contents of another matrix to this matrix using the copy-and-swap idiom.
 	// Parameters:
@@ -795,13 +797,15 @@ public:
 	// - row: An array representing the new row to add.
 	// - size: The size of the array representing the new row.
 	// Returns: None.
-	void push_back(numericalType* row, const size_t& size);
+	void push_back(const std::vector<numericalType> row, const size_t& size);
 
 	// push_back (vector version): Adds a new row to the matrix from a vector.
 	// Parameters:
 	// - row: A vector representing the new row to add.
 	// Returns: None.
 	void push_back(vector<numericalType> row);
+	
+	void clear();
 
 	// pop_back (vector version): Deletes last row of matrix.
 	// Parameters: None
@@ -877,13 +881,13 @@ public:
 	// - rhs: A vector of numericalType representing the right-hand side of the equation system.
 	// - size: Size of the vector.
 	// Returns: A Matrix object representing the result of applying Gaussian elimination.
-	Matrix<numericalType> poorGaussian(numericalType* rhs, const size_t& size) const;
+	Matrix<numericalType> poorGaussian(std::vector<numericalType> rhs, const size_t& size) const;
 
 	// poorGaussian (vector version): Performs a basic form of Gaussian elimination on the matrix.
 	// Parameters:
 	// - rhs: A vector of numericalType representing the right-hand side of the equation system.
 	// Returns: A Matrix object representing the result of applying Gaussian elimination.
-	Matrix<numericalType> poorGaussian(vector<numericalType> rhs) const;
+	Matrix<numericalType> poorGaussian(const vector<numericalType> rhs) const;
 
 	// gaussJordanElimination: Performs Gauss-Jordan elimination on the matrix to achieve reduced row echelon form.
 	// Parameters: None.
@@ -927,7 +931,7 @@ public:
 	// - vector2: The second vector for the outer product calculation, either as an array or vector.
 	// - size2: The size of the second vector if provided as an array.
 	// Returns: A Matrix object representing the outer product of the two vectors.
-	Matrix<numericalType> outerProduct(numericalType* vector1, const size_t& size1, numericalType* vector2, const size_t& size2) const;
+	Matrix<numericalType> outerProduct(const std::vector<numericalType> vector1, const size_t& size1, const std::vector<numericalType> vector2, const size_t& size2) const;
 
 	// outerProduct (vector version): Computes the outer product of two vectors.
 	// Parameters:
@@ -941,7 +945,7 @@ public:
 	// - lineVector: The direction vector defining the straight line, provided as either an array with its size or a vector.
 	// - size: Size of the vector.
 	// Returns: A Matrix object representing the projection matrix onto the line.
-	Matrix<numericalType> projectToStarightLine(numericalType* lineVector, const size_t& size) const;
+	Matrix<numericalType> projectToStarightLine(const std::vector<numericalType> lineVector, const size_t& size) const;
 
 	// projectToStraightLine (vector version): Computes the projection matrix for projecting vectors onto a straight line defined by a given direction vector.
 	// Parameters:
@@ -954,7 +958,7 @@ public:
 	// - normalVector: The normal vector defining the hyperplane, provided as either an array with its size or a vector.
 	// size: Size of the vector.
 	// Returns: A Matrix object representing the projection matrix onto the hyperplane.
-	Matrix<numericalType> projectToHyperPlane(numericalType* normalVector, const size_t& size) const;
+	Matrix<numericalType> projectToHyperPlane(const std::vector<numericalType> normalVector, const size_t& size) const;
 
 	// projectToHyperPlane (vector version): Computes the projection matrix for projecting vectors onto a hyperplane defined by its normal vector.
 	// Parameters:
@@ -967,7 +971,7 @@ public:
 	// - normalVector: The normal vector defining the hyperplane, provided as either an array with its size or a vector.
 	// - size: Size of the vector.
 	// Returns: A Matrix object representing the mirroring matrix relative to the hyperplane.
-	Matrix<numericalType> mirrorToHyperPlane(numericalType* normalVector, const size_t& size) const;
+	Matrix<numericalType> mirrorToHyperPlane(const std::vector<numericalType> normalVector, const size_t& size) const;
 
 	// mirrorToHyperPlane (vector version): Computes the mirroring matrix relative to a hyperplane defined by its normal vector.
 	// Parameters:
@@ -1018,8 +1022,8 @@ public:
 	// - maxIterations: Maximum number of iterations for the eigenvalue calculation algorithm.
 	// - tol: Tolerance for determining convergence of the algorithm.
 	// Returns: A array of numericalType containing the eigenvalues of the matrix.
-	numericalType* eigenvalues(int maxIterations = 1000, numericalType tol = 1e-9) const;
-	numericalType* spectrum(int maxIterations = 1000, numericalType tol = 1e-9) const { return eigenvalues(maxIterations, tol); }
+	std::vector<numericalType> eigenvalues(int maxIterations = 1000, numericalType tol = 1e-9) const;
+	std::vector<numericalType> spectrum(int maxIterations = 1000, numericalType tol = 1e-9) const { return eigenvalues(maxIterations, tol); }
 
 	// eigenvectors: Computes the eigenvectors of the matrix.
 	// Parameters: None.
@@ -1060,7 +1064,7 @@ public:
 	// - maxIterations: Maximum number of iterations for the eigenvalue calculation algorithm.
 	// - tol: Tolerance for determining convergence of the algorithm.
 	// Returns: A array of numericalType containing the singular-values of the matrix.
-	numericalType* singularvalues(int maxIterations = 1000, numericalType tol = 1e-9) const;
+	std::vector<numericalType> singularvalues(int maxIterations = 1000, numericalType tol = 1e-9) const;
 
 
 	// characteristics: Computes the characteristic polynomial of the matrix. Calculated with using x(lambda) = det(A - lamdba * I).
@@ -1090,7 +1094,7 @@ public:
 	// Parameters:
 	// - truncSize: The number of terms to include in the series expansion. By default set to 20.
 	// Returns: A Matrix object representing e^A calculated up to truncSize terms.
-	Matrix<numericalType> matrixExponential(const size_t& truncSize = 20) const;
+	// Matrix<numericalType> matrixExponential(const size_t& truncSize = 20) const;
 
 	// lowerBandwidth: Computes the lower bandwidth of the matrix.
 	// Parameters: None.
@@ -1137,7 +1141,7 @@ public:
 	// - size: The size of the array representing the external row.
 	// - rowIdx: The index of the row within the matrix.
 	// Returns: The angle in radians between the external row and the specified matrix row as a double.
-	double angleBetween(numericalType* row, const size_t& size, const size_t& rowIdx) const;
+	double angleBetween(const std::vector<numericalType> row, const size_t& size, const size_t& rowIdx) const;
 
 	// angleBetween (vector and row index version): Calculates the angle between an external row represented as a vector and a specific row in the matrix.
 	// Parameters:
@@ -1153,7 +1157,7 @@ public:
 	// - row2: Array representing the second row.
 	// - size2: The size of the second array.
 	// Returns: The angle in radians between the two rows as a double.
-	double angleBetween(numericalType* row1, const size_t& size1, numericalType* row2, const size_t& size2) const;
+	double angleBetween(const std::vector<numericalType> row1, const size_t& size1, const std::vector<numericalType> row2, const size_t& size2) const;
 
 	// angleBetween (vector version): Calculates the angle between two rows represented as vectors.
 	// Parameters:
@@ -1176,7 +1180,7 @@ public:
 	// - toThis: Array representing the vector onto which projectThisTo is projected.
 	// - size2: The size of toThis array.
 	// Returns: A vector of numericalType representing the projection of projectThisTo onto toThis.
-	vector<numericalType> projectToVector(numericalType* projectThisTo, const size_t& size1, numericalType* toThis, const size_t& size2) const;
+	vector<numericalType> projectToVector(const std::vector<numericalType> projectThisTo, const size_t& size1, const std::vector<numericalType> toThis, const size_t& size2) const;
 
 	// projectTo (vector version): Projects one vector onto another and returns the projection as a new dynamically allocated array.
 	// Parameters:
@@ -1184,7 +1188,7 @@ public:
 	// - toThis: The vector onto which projectThisTo is projected.
 	// Returns: A pointer to a dynamically allocated array of numericalType representing the projection of projectThisTo onto toThis.
 	// Note: The caller is responsible for deleting the returned array to avoid memory leaks.
-	numericalType* projectTo(const vector<numericalType>& projectThisTo, const vector<numericalType>& toThis) const;
+	std::vector<numericalType> projectTo(const vector<numericalType>& projectThisTo, const vector<numericalType>& toThis) const;
 
 	// projectTo (array version): Projects one vector represented as an array onto another vector also represented as an array, and returns the projection as a new dynamically allocated array.
 	// Parameters:
@@ -1194,7 +1198,7 @@ public:
 	// - size2: The size of toThis array.
 	// Returns: A pointer to a dynamically allocated array of numericalType representing the projection of projectThisTo onto toThis.
 	// Note: The caller is responsible for deleting the returned array to avoid memory leaks.
-	numericalType* projectTo(numericalType* projectThisTo, const size_t& size1, numericalType* toThis, const size_t& size2) const;
+	std::vector<numericalType> projectTo(const std::vector<numericalType> projectThisTo, const size_t& size1, const std::vector<numericalType> toThis, const size_t& size2) const;
 
 	// gramSchmidAlgorithm: Applies the Gram-Schmidt process to the matrix to orthogonalize its rows.
 	// Parameters: None.
@@ -1215,7 +1219,7 @@ public:
 	// - size: The size of the array 'b', which should match the number of rows in the matrix for the calculation to be valid.
 	// Returns: A Matrix object representing the solution vector 'x' that minimizes the equation ||Ax - b||^2, where A is the current matrix.
 	// Note: It is the caller's responsibility to ensure that the size of 'b' matches the number of rows in the matrix.
-	Matrix<numericalType> leastSquares(numericalType* b, const size_t& size) const;
+	Matrix<numericalType> leastSquares(const std::vector<numericalType> b, const size_t& size) const;
 
 	// mean: Calculates the mean (average) value of all elements in the matrix.
 	// This function iterates over every element of the matrix, sums them up, and divides by the total number of elements.
@@ -1294,7 +1298,7 @@ public:
 	// Parameters:
 	// - theta: The angle for the rotation.
 	// Returns: A 2D Matrix object that is filled with the rotation values.
-	Matrix<numericalType> rotationMatrix2D(const double& theta) const;
+	// Matrix<numericalType> rotationMatrix2D(const double& theta) const;
 
 	// rotationMatrix3D: Generates a 3D rotation matrix, where the rotation angles are the given angles.
 	// Rotation matrixes are nxn dimension matrixes with a determinant of 1, and they have to be orthogonal.
@@ -1303,7 +1307,7 @@ public:
 	// - beta: Angle to rotate on y axis.
 	// - gamma: Angle to rotate on x axis.
 	// Returns: A 3D matrix filled with the right rotation values, for the 3D rotation.
-	Matrix<numericalType> rotationMatrix3D(const double& alpha, const double& beta, const double& gamma) const;
+	// Matrix<numericalType> rotationMatrix3D(const double& alpha, const double& beta, const double& gamma) const;
 
 	
 	// resize: Resizes the matrix to the specified dimensions, optionally retaining the old data.
@@ -1329,14 +1333,14 @@ public:
 	// - filterMatrix: A Matrix object representing the filter matrix.
 	// Returns: A new Matrix object that is the result of filtering the current matrix with the filter matrix.
 	// Note: Filter matrix must be a sqaure matrix, with odd number of rows and columns.
-	Matrix<numericalType> filter(const Matrix<numericalType>& filterMatrix) const;
+	// Matrix<numericalType> filter(const Matrix<numericalType>& filterMatrix) const;
 
 	// filter (vector version): Filters the current matrix with a given filter matrix represented as a vector of vectors.
 	// This function applies a convolution-like operation using the provided filter matrix.
 	// Parameters:
 	// - filterMatrix: A vector of vectors of numericalType representing the filter matrix.
 	// Returns: A new Matrix object that is the result of filtering the current matrix with the filter matrix.
-	Matrix<numericalType> filter(const vector<vector<numericalType>>& filterMatrix) const;
+	// Matrix<numericalType> filter(const vector<vector<numericalType>>& filterMatrix) const;
 
 	// size: Returns the total number of elements in the matrix.
 	// This function calculates the product of the number of rows and columns to determine the total element count.
@@ -1410,19 +1414,19 @@ public:
 	// each row an column has only one 1 value.
 	// Parameters: None
 	// Returns: True if the matrix is a permutation matrix, flase otherwise.
-	bool isPermutationMatrix() const;
+	// bool isPermutationMatrix() const;
 
 	// numInversions: Returns the number of inversion in the permuation matrix. Returns -1 for non permuation matrixes.
 	// Parameters: None.
 	// Returns: The number of inversions in the permuation matrix.
-	int numInversions() const;
+	// int numInversions() const;
 
 	// createPermutationMatrixFromInversion (vector version): Creates a permuation matrix from the given inversion.
 	// For example inversions = {3, 4, 2, 1} will crate a permutation matrix, where these inversions match up.
 	// Parameters:
 	// - inversions: Vector that is containing the ordered inversions.
 	// Returns: The permutation matrix created from the inversion.
-	Matrix<numericalType> createPermutationMatrixFromInversion(const vector<numericalType>& inversions) const;
+	// Matrix<numericalType> createPermutationMatrixFromInversion(const vector<numericalType>& inversions) const;
 
 	// createPermutationMatrixFromInversion (arary version): Creates a permuation matrix from the given inversion.
 	// For example inversions = {3, 4, 2, 1} will crate a permutation matrix, where these inversions match up.
@@ -1430,18 +1434,18 @@ public:
 	// - inversions: Array that is containing the ordered inversions.
 	// - len: Length of the array.
 	// Returns: The permutation matrix created from the inversion.
-	Matrix<numericalType> createPermutationMatrixFromInversion(numericalType* inversions, const size_t& len) const;
+	// Matrix<numericalType> createPermutationMatrixFromInversion(numericalType* inversions, const size_t& len) const;
 
 	// isSnake: Checks if the matrix is a snake, meaning it has only one element in each row and column.
 	// Parameters: None.
 	// Returns: True if the matrix is snake, false otherwise.
-	bool isSnake() const;
+	// bool isSnake() const;
 
 	// isPermutationEvem: Returns if the permutation is even in the permutation matrix.
 	// Parameters: None.
 	// Returns: True if the permutation is even in the matrix, false otherwise.
 	// Note: No checking if the matrix is a permutation matrix.
-	bool isPermutationEven() const;
+	// bool isPermutationEven() const;
 
 	// isIdentity: Checks if the matrix is an identity matrix.
 	// Parameters: None.
@@ -1465,7 +1469,7 @@ public:
 	// - rowSize: The number of rows, in the rehsaped matrix.
 	// - colSize: The number of coluns, in the reshaped matrix.
 	// Returns: The reshaped matrix.
-	Matrix<numericalType> reshape(const Matrix<numericalType>& mat, const size_t& rowSize, const size_t& colSize) const;
+	// Matrix<numericalType> reshape(const Matrix<numericalType>& mat, const size_t& rowSize, const size_t& colSize) const;
 
 	// scale: Scale the matrix's values int the given intervall.
 	// Parameters: 
@@ -1473,7 +1477,7 @@ public:
 	// - upperBound: The upper bound of the intervall.
 	// - lowerBound: The lower bound of the intervall.
 	// Returns: The scaled matrix.
-	Matrix<numericalType> scale(const numericalType& upperBound, const numericalType& lowerBound) const;
+	// Matrix<numericalType> scale(const numericalType& upperBound, const numericalType& lowerBound) const;
 };
 
 #endif /*_MATRIX_HPP*/

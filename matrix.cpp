@@ -141,10 +141,7 @@ void Matrix<numericalType>::swapRows(const size_t& row1Idx, const size_t& row2Id
 	if ( isRowIdxOutOfBound(row1Idx) || isRowIdxOutOfBound(row2Idx) )
 		throw std::runtime_error("Invalid row indexes for swapping!");
 
-	// Swap without new allocation
-	numericalType* temp = matrix[row1Idx];
-	matrix[row1Idx] = matrix[row2Idx];
-	matrix[row2Idx] = temp;
+	std::swap(matrix[row1Idx], matrix[row2Idx]);
 }
 
 template<typename numericalType>
@@ -229,12 +226,12 @@ void Matrix<numericalType>::addRow(const size_t& row, vector<numericalType> rowT
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::subtractRow(numericalType* subFrom, const size_t& size1, numericalType* subThis, const size_t& size2) const
+std::vector<numericalType> Matrix<numericalType>::subtractRow(const std::vector<numericalType>& subFrom, const size_t& size1, const std::vector<numericalType>& subThis, const size_t& size2) const
 {
 	if (size1 != size2)
 		throw std::runtime_error("Cannot subtract rows which are not the same size!");
 
-	numericalType* retRow = new numericalType[size1];
+	std::vector<numericalType> retRow(size1);
 
 #ifdef _USING_OMP_
 #pragma omp parallel for
@@ -246,40 +243,25 @@ numericalType* Matrix<numericalType>::subtractRow(numericalType* subFrom, const 
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::subtractRow(const vector<numericalType>& subFrom, const vector<numericalType>& subThis) const
+std::vector<numericalType> Matrix<numericalType>::subtractRow(const vector<numericalType>& subFrom, const vector<numericalType>& subThis) const
 {
 	size_t size1 = subFrom.size();
 	size_t size2 = subThis.size();
 
-	numericalType* sf = new numericalType[size1];
-	numericalType* st = new numericalType[size2];
-
-	numericalType* retVec = subtractRow(sf, size1, st, size2);
-	delete[] sf;
-	delete[] st;
+	std::vector<numericalType> retVec = subtractRow(subFrom, size1, subThis, size2);
 	return retVec;
 }
 
 template<typename numericalType>
-vector<numericalType> Matrix<numericalType>::subtractRowVector(numericalType* subFrom, const size_t& size1, numericalType* subThis, const size_t& size2) const
+vector<numericalType> Matrix<numericalType>::subtractRowVector(std::vector<numericalType> subFrom, const size_t& size1, std::vector<numericalType> subThis, const size_t& size2) const
 {
-	numericalType* rv = subtractRow(subFrom, size1, subThis, size2);
-	vector<numericalType> retVec;
-	for (unsigned i = 0; i < size1; i++)
-		retVec.push_back(rv[i]);
-	delete[] rv;
-	return retVec;
+	return subtractRow(subFrom, size1, subThis, size2);
 }
 
 template<typename numericalType>
 vector<numericalType> Matrix<numericalType>::subtractRowVector(const vector<numericalType>& subFrom, const vector<numericalType>& subThis) const
 {
-	numericalType* rv = subtractRow(subFrom, subThis);
-	vector<numericalType> retVec;
-	for (unsigned i = 0; i < subFrom.size(); i++)
-		retVec.push_back(rv[i]);
-	delete[] rv;
-	return retVec;
+	return subtractRow(subFrom, subThis);
 }
 
 template<typename numericalType>
@@ -303,7 +285,7 @@ numericalType Matrix<numericalType>::dotProduct(const size_t& row1, const size_t
 }
 
 template<typename numericalType>
-numericalType Matrix<numericalType>::dotProduct(numericalType* vec, const size_t& size, const size_t& rowIdx) const
+numericalType Matrix<numericalType>::dotProduct(const std::vector<numericalType> vec, const size_t& size, const size_t& rowIdx) const
 {
 	if (size != _col)
 		throw std::runtime_error("Cannot perform dot product, size doesnt match, vector out of bounds!");
@@ -362,7 +344,7 @@ numericalType Matrix<numericalType>::dotProduct(const vector<numericalType>& vec
 }
 
 template<typename numericalType>
-numericalType Matrix<numericalType>::dotProduct(numericalType* vec1, const size_t& size1, numericalType* vec2, const size_t& size2) const
+numericalType Matrix<numericalType>::dotProduct(const std::vector<numericalType> vec1, const size_t& size1, const std::vector<numericalType> vec2, const size_t& size2) const
 {
 	if(size1 != size2)
 		throw std::runtime_error("Cannot calcualte dor product of different sized vetors!");
@@ -397,7 +379,7 @@ numericalType Matrix<numericalType>::rowAbs(const size_t& idx) const
 }
 
 template<typename numericalType>
-numericalType Matrix<numericalType>::rowAbs(numericalType* row, const size_t& size) const
+numericalType Matrix<numericalType>::rowAbs(const std::vector<numericalType> row, const size_t& size) const
 {
 	numericalType abs = {};
 
@@ -463,7 +445,7 @@ numericalType Matrix<numericalType>::distanceFromRow(const size_t& distanceFromI
 }
 
 template<typename numericalType>
-numericalType Matrix<numericalType>::distanceFromRow(numericalType* otherRow, const size_t& rowSize, const size_t& distanceFromIdx) const
+numericalType Matrix<numericalType>::distanceFromRow(const std::vector<numericalType> otherRow, const size_t& rowSize, const size_t& distanceFromIdx) const
 {
 	if (rowSize != _col)
 		throw std::runtime_error("Row size does not match, cannot compute distance!");
@@ -491,22 +473,7 @@ numericalType Matrix<numericalType>::distanceFromRow(const vector<numericalType>
 	if ( isRowIdxOutOfBound(distanceFromIdx) )
 		throw std::runtime_error("Cannot calculate distance, index out of bounds!");
 
-	// Copying data
-	const unsigned len = otherRow.size();
-	numericalType* other_row = new numericalType[len];
-
-#ifdef _USING_OMP_
-#pragma omp parallel for
-#endif
-	for (unsigned i = 0; i < len; i++)
-		other_row[i] = otherRow[i];
-
-	numericalType dist = distanceFromRow(other_row, _col, distanceFromIdx);
-
-	// Free allocated memory
-	delete[] other_row;
-
-	return dist;
+	return distanceFromRow(otherRow, _col, distanceFromIdx);
 }
 
 template<typename numericalType>
@@ -527,7 +494,7 @@ numericalType Matrix<numericalType>::distanceFromCol(const size_t& distanceFromI
 }
 
 template<typename numericalType>
-numericalType Matrix<numericalType>::distanceFromCol(numericalType* otherCol, const size_t& colSize, const size_t& distanceFromIdx) const
+numericalType Matrix<numericalType>::distanceFromCol(const std::vector<numericalType> otherCol, const size_t& colSize, const size_t& distanceFromIdx) const
 {
 	if (colSize != _row)
 		throw std::runtime_error("Distance from column cannot be calculated, vector too long!");
@@ -555,17 +522,7 @@ numericalType Matrix<numericalType>::distanceFromCol(const vector<numericalType>
 	if ( isColIdxOutOfBound(distanceFromIdx) )
 		throw std::runtime_error("Cannot calculate distance, since index is out of bounds!");
 
-	numericalType* other_col = new numericalType[_row];
-
-#ifdef _USING_OMP_
-#pragma omp parallel for
-#endif
-	for (unsigned i = 0; i < _row; i++)
-		other_col[i] = otherCol[i];
-
-	numericalType dist = distanceFromCol(other_col, _row, distanceFromIdx);
-
-	delete[] other_col;
+	numericalType dist = distanceFromCol(otherCol, _row, distanceFromIdx);
 
 	return dist;
 }
@@ -618,50 +575,31 @@ bool Matrix<numericalType>::isThisOrthonormed() const
 }
 
 template<typename numericalType>
-void Matrix<numericalType>::push_back(numericalType* row, const size_t& size)
+void Matrix<numericalType>::push_back(const std::vector<numericalType> row, const size_t& size)
 {
 	if (size != _col)
 		throw std::runtime_error("Cannot push back row, since it is not the same length as others!");
 
-	vector<numericalType> tmpVec;
-	for (unsigned i = 0; i < size; i++)
-		tmpVec.push_back(row[i]);
-
-	push_back(tmpVec);
+	push_back(row);
 }
 
 template<typename numericalType>
 void Matrix<numericalType>::push_back(vector<numericalType> row)
 {
-	if (row.size() != _col)
+	if (row.size() != _col) {
 		throw std::runtime_error("Row is not the same size as other rows, cannot push back!");
+	}
+	matrix.push_back(row);
+	_row++;
+}
 
-	// Allocating and copiing memory
-	numericalType* newRow = new numericalType[_col];
-	for (unsigned i = 0; i < _col; i++)
-		newRow[i] = row[i];
-
-	numericalType** newMatrix = new numericalType * [_row + 1];
-	for (unsigned i = 0; i < _row; i++)
-		newMatrix[i] = new numericalType[_col];
-
-	// Copy old data
-	for (unsigned i = 0; i < _row; i++)
-		for (unsigned j = 0; j < _col; j++)
-			newMatrix[i][j] = matrix[i][j];
-
-	// Adding new row
-	newMatrix[_row] = newRow;
-
+template<typename numericalType>
+void Matrix<numericalType>::clear()
+{
 	// Free allocated memory
-	for (unsigned i = 0; i < _row; i++)
-		delete[] matrix[i];
-	delete[]matrix;
-
-	// Assigning matrix to be the newly allocated and copied and extended matrix
-	matrix = newMatrix;
-
-	_row = _row + 1;
+	matrix.clear();
+	_row = 0;
+	_col = 0;
 }
 
 template<typename numericalType>
@@ -670,24 +608,8 @@ void Matrix<numericalType>::pop_back()
     if (_row == 0)
         throw std::runtime_error("Cannot pop back, matrix is already empty!");
 
-    // numericalType** newMatrix = new numericalType * [_row - 1];
-
-    // for (unsigned i = 0; i < _row - 1; i++)
-    // {
-    //     newMatrix[i] = new numericalType[_col];
-    //     for (unsigned j = 0; j < _col; j++)
-    //         newMatrix[i][j] = matrix[i][j];
-    // }
-
-    delete[] matrix[_row - 1];
-
-    // for (unsigned i = 0; i < _row - 1; i++)
-    //     delete[] matrix[i];
-    // delete[] matrix;
-
-    // matrix = newMatrix;
-
-    _row -= 1;
+	matrix.pop_back();
+	_row--;
 }
 
 
@@ -895,7 +817,7 @@ template<typename numericalType>
 Matrix<numericalType> Matrix<numericalType>::organizeDecreasing() const
 {
 	// Find leading elements of each row
-	numericalType* leadingIndexes = new numericalType[_row];
+	std::vector<numericalType> leadingIndexes(_row);
 	for (unsigned i = 0; i < _row; i++)
 	{
 		unsigned j = 0;
@@ -942,7 +864,7 @@ Matrix<numericalType> Matrix<numericalType>::organizeDecreasing() const
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::poorGaussian(numericalType* rhs, const size_t& size) const
+Matrix<numericalType> Matrix<numericalType>::poorGaussian(std::vector<numericalType> rhs, const size_t& size) const
 {
 	if (size != _row) 
 		throw std::runtime_error("Cannot solve with poor gaussian, vector not right size!");
@@ -999,22 +921,12 @@ Matrix<numericalType> Matrix<numericalType>::poorGaussian(numericalType* rhs, co
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::poorGaussian(vector<numericalType> rhs) const
+Matrix<numericalType> Matrix<numericalType>::poorGaussian(const vector<numericalType> rhs) const
 {
 	if(rhs.size() != _row) 
 		throw std::runtime_error("Cannot solve with poor gaussian, vector not right size!");
 
-	numericalType* tmpRhs = new numericalType[_row];
-
-	for (unsigned i = 0; i < _row; i++)
-		tmpRhs[i] = rhs[i];
-
-	Matrix<numericalType> retM = this->poorGaussian(tmpRhs, _row);
-
-	for (unsigned i = 0; i < _row; i++)
-		rhs[i] = tmpRhs[i];
-
-	delete[] tmpRhs;
+	Matrix<numericalType> retM = this->poorGaussian(rhs, _row);
 
 	return retM;
 }
@@ -1446,7 +1358,7 @@ vector<numericalType> Matrix<numericalType>::getNormalVector() const
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::outerProduct(numericalType* vector1, const size_t& size1, numericalType* vector2, const size_t& size2) const
+Matrix<numericalType> Matrix<numericalType>::outerProduct(const std::vector<numericalType> vector1, const size_t& size1, const std::vector<numericalType> vector2, const size_t& size2) const
 {
 	// Ensure the second vector is the transpose of the first
 	if (size1 != size2)
@@ -1468,25 +1380,11 @@ Matrix<numericalType> Matrix<numericalType>::outerProduct(numericalType* vector1
 template<typename numericalType>
 Matrix<numericalType> Matrix<numericalType>::outerProduct(vector<numericalType> vector1, vector<numericalType> vector2) const
 {
-	// Ensure the second vector is the transpose of the first
-	if (vector1.size() != vector2.size()) 
-		throw std::invalid_argument("Vectors must be of the same size, cannot perform outer product!");
-
-	size_t n = vector1.size();
-	Matrix<numericalType> m(n, n);
-
-#ifdef _USING_OMP_
-#pragma omp parallel for collapse(2)
-#endif
-	for (size_t i = 0; i < n; ++i) 
-		for (size_t j = 0; j < n; ++j) 
-			m[i][j] = vector1[i] * vector2[j];
-
-	return m;
+	return outerProduct(vector1, vector1.size(), vector2, vector2.size());
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::projectToStarightLine(numericalType* lineVector, const size_t& size) const
+Matrix<numericalType> Matrix<numericalType>::projectToStarightLine(const std::vector<numericalType> lineVector, const size_t& size) const
 {
 	return outerProduct(lineVector, size, lineVector, size);
 }
@@ -1498,7 +1396,7 @@ Matrix<numericalType> Matrix<numericalType>::projectToStarightLine(const vector<
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::projectToHyperPlane(numericalType* normalVector, const size_t& size) const
+Matrix<numericalType> Matrix<numericalType>::projectToHyperPlane(const std::vector<numericalType> normalVector, const size_t& size) const
 {
 	Matrix<numericalType> identity(size, size);
 	identity.setToIdentity();
@@ -1518,7 +1416,7 @@ Matrix<numericalType> Matrix<numericalType>::projectToHyperPlane(const vector<nu
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::mirrorToHyperPlane(numericalType* normalVector, const size_t& size) const
+Matrix<numericalType> Matrix<numericalType>::mirrorToHyperPlane(const std::vector<numericalType> normalVector, const size_t& size) const
 {
 	Matrix<numericalType> identity(size, size);
 	identity.setToIdentity();
@@ -1860,20 +1758,9 @@ vector<numericalType> Matrix<numericalType>::eigenvaluesVector(int maxIterations
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::eigenvalues(int maxIterations, numericalType tol) const
+std::vector<numericalType> Matrix<numericalType>::eigenvalues(int maxIterations, numericalType tol) const
 {
-	vector<numericalType> retVec = eigenvaluesVector(maxIterations, tol);
-
-	// Copiing each element
-	numericalType* ret = new numericalType[_row];
-
-#ifdef _USING_OMP_
-#pragma omp parallel for
-#endif
-	for (unsigned i = 0; i < _row; i++)
-		ret[i] = retVec[i];
-
-	return ret;
+	return eigenvaluesVector(maxIterations, tol);
 }
 
 template<typename numericalType>
@@ -1986,24 +1873,24 @@ bool Matrix<numericalType>::isPositiveSemiDefinite() const
 	return true; // All leading principal minors are non-negative
 }
 
-template<typename numericalType>
-vector<pair<numericalType, numericalType*>> Matrix<numericalType>::ownEigenPairs() const
-{
-	Matrix<numericalType> eigVectors = eigenvectors();
-	numericalType* eigValVector = eigenvalues();
+// template<typename numericalType>
+// vector<pair<numericalType, numericalType*>> Matrix<numericalType>::ownEigenPairs() const
+// {
+// 	Matrix<numericalType> eigVectors = eigenvectors();
+// 	numericalType* eigValVector = eigenvalues();
 
-	vector<pair<numericalType, numericalType*>> retVec;
+// 	vector<pair<numericalType, numericalType*>> retVec;
 	
-	for (unsigned i = 0; i < eigVectors.row(); i++)
-	{
-		pair<numericalType, numericalType*> retPair;
-		retPair.first = eigValVector[i];
-		retPair.second = eigVectors[i];
-		retVec.push_back(retPair);
-	}
+// 	for (unsigned i = 0; i < eigVectors.row(); i++)
+// 	{
+// 		pair<numericalType, numericalType*> retPair;
+// 		retPair.first = eigValVector[i];
+// 		retPair.second = eigVectors[i];
+// 		retVec.push_back(retPair);
+// 	}
 
-	return retVec;
-}
+// 	return retVec;
+// }
 
 template<typename numericalType>
 vector<pair<numericalType, vector<numericalType>>> Matrix<numericalType>::ownEigenPairsVector() const
@@ -2051,13 +1938,11 @@ Matrix<numericalType> Matrix<numericalType>::characteristics() const
 	Matrix<numericalType> identity(_row, _row);
 	identity.setToIdentity();
 
-	numericalType* eigValues = eigenvalues();
+	std::vector<numericalType> eigValues = eigenvalues();
 
 	// Creating lambda*I
 	for (unsigned i = 0; i < _row; i++)
 		identity.scalarMultiplyRow(eigValues[i], i);
-
-	delete[] eigValues;
 
 	// Calculating A - lambda*I
 	Matrix<numericalType> A = *this;
@@ -2148,71 +2033,10 @@ vector<numericalType> Matrix<numericalType>::singularvaluesVector(int maxIterati
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::singularvalues(int maxIterations, numericalType tol) const
+std::vector<numericalType> Matrix<numericalType>::singularvalues(int maxIterations, numericalType tol) const
 {
-	vector<numericalType> retVec = singularvaluesVector(maxIterations, tol);
-
-	// Copiing each element
-	numericalType* ret = new numericalType[_row];
-
-#ifdef _USING_OMP_
-#pragma omp parallel for
-#endif
-	for (unsigned i = 0; i < _row; i++)
-		ret[i] = retVec[i];
-
-	return ret;
+	return singularvaluesVector(maxIterations, tol);
 }
-
-// template<typename numericalType>
-// void Matrix<numericalType>::applySVD(Matrix<numericalType>& U, Matrix<numericalType>& Sigma, Matrix<numericalType>& VT) const
-// {
-// 	if (!isSquare())
-// 		throw std::runtime_error("Cannot perform SVD decomposition on non-square matrix!");
-
-// 	unsigned n = _row;
-// 	U = Matrix<numericalType>(n, n);
-// 	Sigma = Matrix<numericalType>(n, n);
-// 	VT = Matrix<numericalType>(n, n);
-
-// 	// Step 1: Compute A^T
-// 	Matrix<numericalType> At = this->transpose();
-
-// 	// Step 2: Compute A^TA
-// 	Matrix<numericalType> AtA = At * (*this);
-
-// 	// Step 3: get eignevalues of A^TA
-// 	vector<numericalType> eigValVector = AtA.eigenvaluesVector();
-
-// 	// Step 4: get eignevectors of A^TA
-// 	Matrix<numericalType> eigVector = AtA.eigenvectors();
-
-// 	// Sigma := Diagonal entries of Sigma are singular values of the matrix in non-increasing order
-// 	// V := cols are unit eigenvectors of A^TA
-// 	// VT := rows are unit eigenvectors of A^TA
-// 	// U := cols are ui = (1/sigma_i)(A)(cols of V) = (1/sigma_i)(A)(vi)
-// 	Sigma.setToIdentity();
-// 	VT.setToZeroMatrix();
-// 	U.setToZeroMatrix();
-// 	for (unsigned i = 0; i < n; i++)
-// 	{
-// 		Sigma[i][i] = static_cast<numericalType>(std::sqrt(eigValVector[i]));
-
-// 		// Normalize the result to make it a unit vector
-// 		numericalType norm = static_cast<numericalType>(std::sqrt(dotProduct(eigVector[i], eigVector[i]))); // dotProduct calculates the dot product of the vector with itself
-// 		for (auto &element : eigVector[i])
-// 			element /= norm;
-		
-// 		VT.setRow(eigVector[i],i);
-
-// 		U = (*this)*(VT->transpose()); // U = AV
-// 		for(unsigned i=0;i<n;i++) {
-// 			if(Sigma[i][i] != 0) {
-// 				U.scalarMultiplyCol(static_cast<double>(1)/Sigma[i][i], i)
-// 			}
-// 		}
-// 	}
-// }
 
 template<typename numericalType>
 numericalType Matrix<numericalType>::frobeniusNorm() const 
@@ -2248,29 +2072,6 @@ numericalType Matrix<numericalType>::l1Norm() const
 		
 	}
 	return maxSum;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::matrixExponential(const size_t& truncSize) const 
-{
-	if (!isSquare()) 
-		throw std::runtime_error("Matrix must be square., cannot raise to power e^A!");
-
-	Matrix<numericalType> result(_row, _col);
-	result.setToIdentity(); // Start with the identity matrix
-
-	Matrix<numericalType> term(_row, _col);
-	term.setToIdentity(); // First term is also I
-
-	size_t factorial = 1;
-	for (size_t n = 1; n <= truncSize; ++n) // Truncated at 20 terms for simplicity, can be changed when calling
-	{ 
-		factorial *= n;
-		term = term * (*this) / static_cast<numericalType>(factorial); // Each term A^n / n!
-		result = result + term;
-	}
-
-	return result;
 }
 
 template<typename numericalType>
@@ -2429,15 +2230,9 @@ bool Matrix<numericalType>::isColumnVector(const vector<numericalType>& vec) con
 }
 
 template<typename numericalType>
-bool Matrix<numericalType>::isColumnVector(numericalType* vec, const size_t& size) const
+bool Matrix<numericalType>::isColumnVector(const std::vector<numericalType> vec, const size_t& size) const
 {
-	if (size != _row)
-		throw std::runtime_error("Vector size doesnt match, cannot compare columns!");
-	vector<numericalType> col;
-	for (unsigned i = 0; i < size; i++)
-		col.push_back(vec[i]);
-
-	return isColumnVector(col);
+	return isColumnVector(vec);
 }
 
 template<typename numericalType>
@@ -2475,15 +2270,9 @@ bool Matrix<numericalType>::isRowVector(const vector<numericalType>& vec) const
 }
 
 template<typename numericalType>
-bool Matrix<numericalType>::isRowVector(numericalType* vec, const size_t& size) const
+bool Matrix<numericalType>::isRowVector(const std::vector<numericalType>& vec, const size_t& size) const
 {
-	if (size != _col)
-		throw std::runtime_error("Cannot compare rows, since vector not the same size!");
-	vector<numericalType> rowVec;
-	for (unsigned i = 0; i < size; i++)
-		rowVec.push_back(vec[i]);
-
-	return isRowVector(rowVec);
+	return isRowVector(vec);
 }
 
 template<typename numericalType>
@@ -2496,7 +2285,7 @@ bool Matrix<numericalType>::isLinearlyIndependent(const size_t& row1Idx, const s
 }
 
 template<typename numericalType>
-bool Matrix<numericalType>::isLinearlyIndependent(numericalType* row, const size_t& size, const size_t& rowIdx) const
+bool Matrix<numericalType>::isLinearlyIndependent(const std::vector<numericalType>& row, const size_t& size, const size_t& rowIdx) const
 {
 	if (size != _col)
 		throw std::runtime_error("Cannot determine linear independency of different size vectors!");
@@ -2514,17 +2303,13 @@ bool Matrix<numericalType>::isLinearlyIndependent(const vector<numericalType>& r
 	if ( isRowIdxOutOfBound(rowIdx) )
 		throw std::runtime_error("Cannot determine linear independency, row index out of bounds!");
 
-	numericalType* row2 = matrix[rowIdx];
-
-	vector<numericalType> r2;
-	for (unsigned i = 0; i < _col; i++)
-		r2.push_back(row2[i]);
+	std::vector<numericalType> row2 = matrix[rowIdx];
 	
-	return isLinearlyIndependent(row, r2);
+	return isLinearlyIndependent(row, row2);
 }
 
 template<typename numericalType>
-bool Matrix<numericalType>::isLinearlyIndependent(numericalType* row1, const size_t& row1Size, numericalType* row2, const size_t& row2Size) const
+bool Matrix<numericalType>::isLinearlyIndependent(const std::vector<numericalType>& row1, const size_t& row1Size, const std::vector<numericalType>& row2, const size_t& row2Size) const
 {
 	if(row1Size != row2Size)
 		throw std::runtime_error("Cannot determine linear independency of different size vectors!");
@@ -2577,7 +2362,7 @@ double Matrix<numericalType>::angleBetween(const size_t& row1Idx, const size_t& 
 }
 
 template<typename numericalType>
-double Matrix<numericalType>::angleBetween(numericalType* row, const size_t& size, const size_t& rowIdx) const
+double Matrix<numericalType>::angleBetween(const std::vector<numericalType> row, const size_t& size, const size_t& rowIdx) const
 {
 	return angleBetween(row, size, matrix[rowIdx], _col);
 }
@@ -2588,19 +2373,11 @@ double Matrix<numericalType>::angleBetween(const vector<numericalType>& row, con
 	if(row.size() != _col)
 		throw std::runtime_error("Cannot calculate angle, vectors are not the same size!");
 
-	numericalType* r = new numericalType[_col];
-	for (unsigned i = 0; i < _col; i++)
-		r[i] = row[i];
-
-	double result = angleBetween(r, _col, matrix[rowIdx], _col);
-
-	delete[] r;
-
-	return result;
+	return angleBetween(row, _col, matrix[rowIdx], _col);
 }
 
 template<typename numericalType>
-double Matrix<numericalType>::angleBetween(numericalType* row1, const size_t& size1, numericalType* row2, const size_t& size2) const
+double Matrix<numericalType>::angleBetween(const std::vector<numericalType> row1, const size_t& size1, const std::vector<numericalType> row2, const size_t& size2) const
 {
 	if (size1 != size2)
 		throw std::runtime_error("Cannot calculate angle, vectors are not the same size!");
@@ -2623,78 +2400,32 @@ double Matrix<numericalType>::angleBetween(numericalType* row1, const size_t& si
 template<typename numericalType>
 double Matrix<numericalType>::angleBetween(const vector<numericalType>& row1, const vector<numericalType>& row2) const
 {
-	if(row1.size() != row2.size())
-		throw std::runtime_error("Cannot calculate angle, vectors are not the same size!");
-
-	unsigned n = row1.size();
-
-	numericalType* r1 = new numericalType[n];
-	numericalType* r2 = new numericalType[n];
-
-	for (unsigned i = 0; i < n; i++)
-	{
-		r1[i] = row1[i];
-		r2[i] = row2[i];
-	}
-
-	double result = angleBetween(r1, n, r2, n);
-
-	delete[] r1;
-	delete[] r2;
-
-	return result;
+	return angleBetween(row1, row1.size(), row2, row2.size());
 }
 
 template<typename numericalType>
 vector<numericalType> Matrix<numericalType>::projectToVector(const vector<numericalType>& projectThisTo, const vector<numericalType>& toThis) const
 {
-	numericalType* proj = projectTo(projectThisTo, toThis);
-	vector<numericalType> projVec;
-	for (unsigned i = 0; i < toThis.size(); i++)
-		projVec.push_back(proj[i]);
-	delete[] proj;
-	return projVec;
+	return projectTo(projectThisTo, toThis);
 }
 
 template<typename numericalType>
-vector<numericalType> Matrix<numericalType>::projectToVector(numericalType* projectThisTo, const size_t& size1, numericalType* toThis, const size_t& size2) const
+vector<numericalType> Matrix<numericalType>::projectToVector(const std::vector<numericalType> projectThisTo, const size_t& size1, const std::vector<numericalType> toThis, const size_t& size2) const
 {
-	numericalType* proj = projectTo(projectThisTo, size1, toThis, size2);
-	vector<numericalType> projVec;
-	for (unsigned i = 0; i < size2; i++)
-		projVec.push_back(proj[i]);
-	delete[] proj;
-	return projVec;
+	return projectTo(projectThisTo, size1, toThis, size2);
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::projectTo(const vector<numericalType>& projectThisTo, const vector<numericalType>& toThis) const
+std::vector<numericalType> Matrix<numericalType>::projectTo(const vector<numericalType>& projectThisTo, const vector<numericalType>& toThis) const
 {
 	size_t size1 = projectThisTo.size();
 	size_t size2 = toThis.size();
 
-	if(size1 != size2)
-		throw std::runtime_error("Cannot project vectors of different sizes!");
-
-	numericalType* ptt = new numericalType[size1];
-	numericalType* tt = new numericalType[size2];
-
-	for (unsigned i = 0; i < size1; i++)
-	{
-		ptt[i] = projectThisTo[i];
-		tt[i] = toThis[i];
-	}
-
-	numericalType* retVec = projectTo(ptt, size1, tt, size2);
-
-	delete[] ptt;
-	delete[] tt;
-
-	return retVec;
+	return projectTo(projectThisTo, size1, toThis, size2);
 }
 
 template<typename numericalType>
-numericalType* Matrix<numericalType>::projectTo(numericalType* projectThisTo, const size_t& size1, numericalType* toThis, const size_t& size2) const
+std::vector<numericalType> Matrix<numericalType>::projectTo(const std::vector<numericalType> projectThisTo, const size_t& size1, const std::vector<numericalType> toThis, const size_t& size2) const
 {
 	if (size1 != size2)
 		throw std::runtime_error("Cannot project vectors of different sizes!");
@@ -2718,7 +2449,7 @@ numericalType* Matrix<numericalType>::projectTo(numericalType* projectThisTo, co
 
 	numericalType scalar = upper / lower;
 	// Calculating (u*v)/(u*u) * u
-	numericalType* projected = new numericalType[size1];
+	std::vector<numericalType>projected(size1);
 
 #ifdef _USING_OMP_
 #pragma omp parallel for
@@ -2768,24 +2499,11 @@ Matrix<numericalType> Matrix<numericalType>::gramSchmidAlgorithm() const
 template<typename numericalType>
 Matrix<numericalType> Matrix<numericalType>::leastSquares(const vector<numericalType>& b) const
 {
-	if (b.size() != _row)
-		throw std::runtime_error("Cannot solve least sqaures problem, matrix size doesnt match vector size!");
-
-	size_t n = b.size();
-
-	numericalType* bArr = new numericalType[n];
-	for (unsigned i = 0; i < n; i++)
-		bArr[i] = b[i];
-
-	Matrix<numericalType> sol = leastSquares(bArr, n);
-
-	delete[] bArr;
-
-	return sol;
+	return leastSquares(b, b.size());
 }
 
 template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::leastSquares(numericalType* b, const size_t& size) const
+Matrix<numericalType> Matrix<numericalType>::leastSquares(const std::vector<numericalType> b, const size_t& size) const
 {
 	if (size != _row) 
 		throw std::invalid_argument("Size of b must match the number of rows in the matrix.");
@@ -2997,75 +2715,6 @@ unsigned Matrix<numericalType>::count(const numericalType& num) const
 	return cnt;
 }
 
-// template<typename numericalType>
-// Matrix<numericalType> Matrix<numericalType>::rand(const size_t& rowCnt, const size_t& colCnt, const double& lowerLimit, const double& upperLimit) const
-// {
-// 	// Uses constexpr, which mean the if statements will be evaluated at compile time
-// 	// It checks if the numericalType is a floating point variable, or integral type
-
-// 	Matrix<numericalType> result(rowCnt, colCnt);
-
-// 	// Initialize a random number generator
-// 	std::random_device rd;
-// 	std::mt19937 gen(rd());
-
-// 	// Use different distributions based on the numericalType
-// 	if (std::is_floating_point<numericalType>::value) 
-// 	{
-// 		std::uniform_real_distribution<numericalType> dis(lowerLimit, upperLimit);
-// 		for (size_t i = 0; i < rowCnt; ++i) 
-// 			for (size_t j = 0; j < colCnt; ++j) 
-// 				result.matrix[i][j] = dis(gen);
-			
-// 	}
-// 	else if (std::is_integral<numericalType>::value) 
-// 	{
-// 		// Since the uniform_int_distribution constructor does not accept floating-point types,
-// 		// static_cast them to the numericalType, ensuring the function parameters are of numericalType.
-// 		std::uniform_int_distribution<numericalType> dis(static_cast<numericalType>(lowerLimit), static_cast<numericalType>(upperLimit));
-// 		for (size_t i = 0; i < rowCnt; ++i) 
-// 			for (size_t j = 0; j < colCnt; ++j) 
-// 				result.matrix[i][j] = dis(gen);
-// 	}
-
-// 	return result;
-// }
-
-template<typename numericalType>
-Matrix < numericalType> Matrix<numericalType>::rotationMatrix2D(const double& theta) const
-{
-	Matrix<numericalType> rotM(2, 2);
-
-	rotM[0][0] = static_cast<numericalType>(std::cos(theta));
-	rotM[0][1] = -1 * static_cast<numericalType>(std::sin(theta));
-	rotM[1][0] = static_cast<numericalType>(std::sin(theta));
-	rotM[1][1] = static_cast<numericalType>(std::cos(theta));
-
-	// Rotation matrix should look like something like this:
-	//	[ cos(theta)	-sin(theta)	]
-	//	[ sin(theta)	cos(theta)	]
-
-	return rotM;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::rotationMatrix3D(const double& alpha, const double& beta, const double& gamma) const
-{
-	Matrix<numericalType> rotM(3, 3);
-
-	rotM[0][0] = static_cast<numericalType>(std::cos(beta) * std::cos(gamma));
-	rotM[0][1] = static_cast<numericalType>(std::sin(alpha) * std::sin(beta)*std::cos(gamma) - std::cos(alpha) * std::sin(gamma));
-	rotM[0][2] = static_cast<numericalType>(std::cos(alpha) * std::sin(beta)*std::cos(gamma) + std::sin(alpha) * std::sin(gamma));
-	rotM[1][0] = static_cast<numericalType>(std::cos(beta) * std::sin(gamma));
-	rotM[1][1] = static_cast<numericalType>(std::sin(alpha) * std::sin(beta) * std::sin(gamma) + std::cos(alpha) * std::cos(gamma));
-	rotM[1][2] = static_cast<numericalType>(std::cos(alpha) * std::sin(beta) * std::sin(gamma) - std::sin(alpha) * std::cos(gamma));
-	rotM[2][0] = static_cast<numericalType>(-1 * std::sin(beta));
-	rotM[2][1] = static_cast<numericalType>(std::sin(alpha) * std::cos(beta));
-	rotM[2][2] = static_cast<numericalType>(std::cos(alpha) * std::cos(beta));
-
-	return rotM;
-}
-
 template<typename numericalType>
 void Matrix<numericalType>::resize(const size_t& rowNum, const size_t& colNum, bool fillWithOld)
 {
@@ -3093,51 +2742,6 @@ void Matrix<numericalType>::resize(const size_t& rowNum, const size_t& colNum, b
 
 		*this = newM;
 	}
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::filter(const Matrix<numericalType>& filterMatrix) const
-{
-	if (_row < filterMatrix.row() || _col < filterMatrix.col())
-		throw std::runtime_error("Cannot apply filtering, filter matrix too big!");
-
-	if (filterMatrix.row() % 2 == 0 || filterMatrix.col() != filterMatrix.row())
-		throw std::invalid_argument("Filter must be square with odd dimensions");
-
-	unsigned filterRow = filterMatrix.row();
-	unsigned filterCol = filterMatrix.col();
-
-	// Return matrix sizes, which be the filtered matrix
-	unsigned diffRow = _row - filterRow;
-	unsigned diffCol = _col - filterCol;
-	unsigned filteredRow = diffRow + 1;
-	unsigned filteredCol = diffCol + 1;
-
-	Matrix<numericalType> retM(filteredRow, filteredCol);
-
-#ifdef _USING_OMP_
-#pragma omp paralell for collapse(4)
-#endif
-	for (unsigned i = 1; i < diffRow + 2; i++)
-		for (unsigned j = 1; j < diffCol + 2; j++)
-			for (unsigned k = 0; k < filterRow; k++)
-				for (unsigned l = 0; l < filterCol; l++)
-					retM[i - 1][j - 1] += filterMatrix[k][l] * matrix[(i - 1) + k][(j - 1) + l];
-
-	unsigned filterMatrixSize = filterMatrix.size();
-	retM = (retM / static_cast<numericalType>(filterMatrixSize));
-
-	return retM;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::filter(const vector<vector<numericalType>>& filterMatrix) const
-{
-	Matrix<numericalType> fM(filterMatrix.size(), filterMatrix[0].size());
-	for (unsigned i = 0; i < filterMatrix.size(); i++)
-		for (unsigned j = 0; j < filterMatrix[0].size(); j++)
-			fM[i][j] = filterMatrix[i][j];
-	return filter(fM);
 }
 
 template<typename numericalType>
@@ -3298,127 +2902,6 @@ bool Matrix<numericalType>::isBijective() const
 }
 
 template<typename numericalType>
-bool Matrix<numericalType>::isPermutationMatrix() const
-{
-	if (!isSquare())
-		return false;
-
-	for (unsigned i = 0; i < _row; i++)
-	{
-		for (unsigned j = 0; j < _col; j++)
-		{
-			if (matrix[i][j] == static_cast<numericalType>(1))
-			{
-				for (unsigned k = 0; k < _row; k++)
-					if (matrix[k][j] != static_cast<numericalType>(0) && k != i)
-						return false;
-				for (unsigned k = 0; k < _col; k++)
-					if (matrix[i][k] != static_cast<numericalType>(0) && k != j)
-						return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-template<typename numericalType>
-int Matrix<numericalType>::numInversions() const
-{
-	int inversionCntr = -1;
-
-	// If the matrix is not a permutation matrix, then returning -1
-	if (!isPermutationMatrix()) return inversionCntr;
-
-	inversionCntr = 0;
-
-	for (unsigned i = 0; i < _row - 1; i++)
-	{
-		for (unsigned j = 0; j < _col; j++)
-		{
-			if (matrix[i][j] == static_cast<numericalType>(1))
-			{
-				for (unsigned k = i + 1; k < _row; k++)
-				{
-					for (unsigned l = 0; l < j; l++)
-					{
-						if (matrix[k][l] == static_cast<numericalType>(1))
-							inversionCntr++;
-					}
-				}
-			}
-		}
-	}
-
-	return inversionCntr;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::createPermutationMatrixFromInversion(const vector<numericalType>& inversions) const
-{
-	numericalType* inv = new numericalType[inversions.size()];
-
-	for (unsigned i = 0; i < inversions.size(); i++)
-		inv[i] = inversions[i];
-
-	Matrix<numericalType> retM = createPermutationMatrixFromInversion(inv, inversions.size());
-
-	delete[] inv;
-
-	return retM;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::createPermutationMatrixFromInversion(numericalType* inversions, const size_t& len) const
-{
-	Matrix<numericalType> inversionMatrix(len, len);
-	
-	unsigned n = len;
-
-	for (unsigned i = 0; i < n; i++)
-	{
-		unsigned idx = static_cast<unsigned>(inversions[i] - 1);
-
-		for (unsigned j = 0; j < n; ++j)
-			if (idx == j)
-				inversionMatrix[i][j] = 1;
-	}
-
-	return inversionMatrix;
-}
-
-template<typename numericalType>
-bool Matrix<numericalType>::isSnake() const
-{
-	if (!isSquare())
-		return false;
-
-	for (unsigned i = 0; i < _row; i++)
-	{
-		for (unsigned j = 0; j < _col; j++)
-		{
-			if (matrix[i][j] > static_cast<numericalType>(0))
-			{
-				for (unsigned k = 0; k < _row; k++)
-					if (matrix[i][k] != static_cast<numericalType>(0) && j != k)
-						return false;
-				for (unsigned k = 0; k < _col; k++)
-					if (matrix[k][j] != static_cast<numericalType>(0) && i != k)
-						return false;
-			}
-		}
-	}
-
-	return true;
-}
-
-template<typename numericalType>
-bool Matrix<numericalType>::isPermutationEven() const
-{
-	return ((numInversions() % 2) == 0);
-}
-
-template<typename numericalType>
 bool Matrix<numericalType>::isIdentity() const
 {
 	if (!isSquare())
@@ -3479,75 +2962,6 @@ Matrix<numericalType> Matrix<numericalType>::normalize() const
 			normalizedMatrix[i][j] = (normalizedMatrix[i][j] - min) / (max - min);
 
 	return normalizedMatrix;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::reshape(const Matrix<numericalType>& mat, const size_t& rowSize, const size_t& colSize) const
-{
-	Matrix<numericalType> reshapedMatrix(rowSize, colSize);
-
-	size_t oldSize = mat.size();
-	size_t newSize = reshapedMatrix.size();
-
-	if (oldSize != newSize)
-		throw std::runtime_error("Cannot reshape matrix, information will be lost!");
-
-	size_t rwIdx = 0;
-	size_t clIdx = 0;
-
-	unsigned rows = mat.row();
-	unsigned cols = mat.col();
-
-	for (unsigned i = 0; i < rows; i++)
-	{
-		for (unsigned j = 0; j < cols; j++)
-		{
-			numericalType val = mat[i][j];
-
-			if (clIdx == colSize)
-			{
-				rwIdx++;
-				clIdx = 0;
-				reshapedMatrix[rwIdx][clIdx] = val;
-				clIdx++;
-			}
-			else
-			{
-				reshapedMatrix[rwIdx][clIdx] = val;
-				clIdx++;
-			}
-		}
-	}
-
-	return reshapedMatrix;
-}
-
-template<typename numericalType>
-Matrix<numericalType> Matrix<numericalType>::scale(const numericalType& upperBound, const numericalType& lowerBound) const
-{
-	numericalType min = std::numeric_limits<numericalType>::max();
-	numericalType max = std::numeric_limits<numericalType>::min();
-
-	for (unsigned i = 0; i < _row; i++)
-	{
-		for (unsigned j = 0; j < _col; j++)
-		{
-			if (matrix[i][j] > max)
-				max = matrix[i][j];
-			else if (matrix[i][j] < min)
-				min = matrix[i][j];
-		}
-	}
-
-
-	Matrix<numericalType> scaledMatrix(_row, _col);
-
-	// Scaling
-	for (unsigned i = 0; i < _row; i++)		
-		for (unsigned j = 0; j < _col; j++)
-			scaledMatrix[i][j] = (matrix[i][j] - min) / (max - min) * (upperBound - lowerBound) + lowerBound;
-	
-	return scaledMatrix;
 }
 
 
