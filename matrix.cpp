@@ -1717,9 +1717,9 @@ vector<numericalType> Matrix<numericalType>::eigenvaluesVector(int maxIterations
 	Matrix<numericalType> A = *this; // Copy of the matrix, as the process is destructive
 	Matrix<numericalType> Q(n, n), R(n, n);
 
-#ifdef _USING_OMP_
-#pragma omp parallel for
-#endif
+// #ifdef _USING_OMP_
+// #pragma omp parallel for
+// #endif
 	for (int iter = 0; iter < maxIterations; ++iter) 
 	{
 		// QR decomposition of A
@@ -2965,10 +2965,10 @@ Matrix<numericalType> Matrix<numericalType>::normalize() const
 }
 
 
-// Unsigned data types
-template class Matrix<unsigned>;
-template class Matrix<unsigned long>;
-template class Matrix<unsigned long long>;
+// Unsigned data types(std::abs is defined for signed data-types only)
+// template class Matrix<unsigned>;
+// template class Matrix<unsigned long>;
+// template class Matrix<unsigned long long>;
 
 // Int data types
 template class Matrix<short int>;

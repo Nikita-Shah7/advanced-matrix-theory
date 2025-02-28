@@ -1,8 +1,8 @@
 #include "matrix.hpp"
-// #include <iostream>
-// #include <vector>
-// #include <fstream>
 #include <bits/stdc++.h>
+#include <windows.h>
+#include <psapi.h>
+#include <omp.h>
 using namespace std;
 
 string SOLUTION_SET_FOLDER = "solution_set/";
@@ -14,6 +14,15 @@ long long int after_check_4 = 0;
 long long int after_check_5 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
+
+void printMemoryUsage()
+{
+    PROCESS_MEMORY_COUNTERS memCounter;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &memCounter, sizeof(memCounter)))
+    {
+        std::cout << "Memory usage: " << memCounter.WorkingSetSize / 1024 << " KB\n";
+    }
+}
 
 long long int nCr(long long int n, long long int r)
 {
@@ -59,7 +68,8 @@ void print_vector(vector<int> v)
     cout << endl;
 }
 
-void printToStdOutWithCommas(Matrix<double> A)
+template <typename T>
+void printToStdOutWithCommas(Matrix<T> A)
 {
     cout << "[" << endl;
     for (unsigned i = 0; i < A.row(); ++i)
@@ -108,7 +118,7 @@ void generate_Y_matrix(int n, const Matrix<int> X, Matrix<int> &Y)
     return;
 }
 
-void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<double> &B)
+void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<long double> &B)
 {
     for (size_t i = 0; i < B.row() / 2; i++)
     {
@@ -134,7 +144,7 @@ void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<d
     return;
 }
 
-void print_solution_matrix(int n, Matrix<double> t)
+void print_solution_matrix(int n, Matrix<long double> t)
 {
     string filename = SOLUTION_SET_FOLDER + "sol_set_" + to_string(n) + ".txt";
     // Open the file in append mode
@@ -154,7 +164,7 @@ void print_solution_matrix(int n, Matrix<double> t)
     file.close();
 }
 
-void print_solution_matrix(Matrix<double> A, Matrix<double> t)
+void print_solution_matrix(Matrix<long double> A, Matrix<long double> t)
 {
     std::cout << "[" << std::endl;
     for (unsigned i = 0; i < A.row(); ++i)
@@ -172,27 +182,27 @@ void print_solution_matrix(Matrix<double> A, Matrix<double> t)
 }
 
 // Create augmented matrix: [ A | 1 ]
-Matrix<double> matrix_augmentation(Matrix<double> A)
+Matrix<long double> matrix_augmentation(Matrix<long double> A)
 {
     int A_row = A.row();
     int A_col = A.col();
-    Matrix<double> augmented(A_row, A_col + 1);
+    Matrix<long double> augmented(A_row, A_col + 1);
 
     for (size_t i = 0; i < A_row; ++i)
     {
         for (size_t j = 0; j < A_col; ++j)
         {
-            augmented[i][j] = static_cast<double>(A[i][j]);
+            augmented[i][j] = static_cast<long double>(A[i][j]);
         }
-        augmented[i][A_col] = static_cast<double>(1);
+        augmented[i][A_col] = static_cast<long double>(1);
     }
     return augmented;
 }
 
-Matrix<double> gaussian_elimination(Matrix<double> A)
+Matrix<long double> gaussian_elimination(Matrix<long double> A)
 {
     size_t n = A.row();
-    Matrix<double> augmented = matrix_augmentation(A);
+    Matrix<long double> augmented = matrix_augmentation(A);
 
     // Forward Elimination with Partial Pivoting
     for (size_t i = 0; i < n; ++i)
@@ -232,7 +242,7 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
     }
 
     // Back Substitution
-    Matrix<double> t(n, 1);
+    Matrix<long double> t(n, 1);
     for (int i = n - 1; i >= 0; --i)
     {
         t[i][0] = augmented[i][n];
@@ -247,13 +257,13 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
 }
 
 // Generate matrix T from t
-Matrix<double> generate_T_matrix(int n, Matrix<double> t)
+Matrix<long double> generate_T_matrix(int n, Matrix<long double> t)
 {
-    Matrix<double> T(0, n);
+    Matrix<long double> T(0, n);
 
     for (size_t i = 0; i < t.row();)
     {
-        vector<double> v;
+        vector<long double> v;
         for (size_t j = 0; j < n; j++, i++)
         {
             v.push_back(t[i][0]);
@@ -263,17 +273,17 @@ Matrix<double> generate_T_matrix(int n, Matrix<double> t)
     return T;
 }
 
-bool check_condition_for_T(int n, Matrix<int> X, Matrix<double> t)
+bool check_condition_for_T(int n, Matrix<int> X, Matrix<long double> t)
 {
     if (t.size() == 0)
         return false;
 
     // Generate matrix T from t
-    Matrix<double> T = generate_T_matrix(n, t);
+    Matrix<long double> T = generate_T_matrix(n, t);
 
     for (size_t p = 0; p < X.row(); p++)
     {
-        Matrix<double> x(n, 1); // x -> 1 x n
+        Matrix<long double> x(n, 1); // x -> 1 x n
 
         for (int k = 0; k < n; k++)
             x[k][0] = X[p][k];
@@ -621,7 +631,7 @@ bool check_linear_dep_of_A_5(int n, vector<bool> mask)
     return false;
 }
 
-bool check_linear_dep_of_A_6_helper(int n, const Matrix<double> B, vector<bool> mask, int col1, int col2, int col3, int col4)
+bool check_linear_dep_of_A_6_helper(int n, const Matrix<long double> B, vector<bool> mask, int col1, int col2, int col3, int col4)
 {
     for (long long int i = 0; i < mask.size(); i++)
     {
@@ -635,7 +645,7 @@ bool check_linear_dep_of_A_6_helper(int n, const Matrix<double> B, vector<bool> 
 
 // Consider columnar dependencies
 // C(col1) - C(col2) = C(col3) - C(col4)
-bool check_linear_dep_of_A_6(int n, const Matrix<double> B, vector<bool> mask)
+bool check_linear_dep_of_A_6(int n, const Matrix<long double> B, vector<bool> mask)
 {
     if (n == 2)
         return false;
@@ -659,7 +669,7 @@ bool check_linear_dep_of_A_6(int n, const Matrix<double> B, vector<bool> mask)
 }
 
 // check if all entries of a column are same(i.e. all are 1 or -1)
-bool check_linear_dep_of_A_7(int n, const Matrix<double> B, vector<bool> mask)
+bool check_linear_dep_of_A_7(int n, const Matrix<long double> B, vector<bool> mask)
 {
     for (int col = 0; col < B.col(); col++)
     {
@@ -688,7 +698,7 @@ bool check_linear_dep_of_A_7(int n, const Matrix<double> B, vector<bool> mask)
     return false;
 }
 
-void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
+void solve_for_A(int n, Matrix<int> X, Matrix<long double> A)
 {
     if (A.determinant() != 0)
     {
@@ -696,19 +706,23 @@ void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
 
         // printToStdOutWithCommas(A);
         // A.printToStdOut();
-        Matrix<double> t = gaussian_elimination(A);
+        Matrix<long double> t = gaussian_elimination(A);
         if (check_condition_for_T(n, X, t))
         {
             unique_sol_sys++;
-            cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
-            // print_solution_matrix(n, t);  // file <<
-            print_solution_matrix(A, t); // cout <<
+#pragma omp critical
+            {
+                cout << "Unique Solution System #" << unique_sol_sys << ":" << endl;
+                print_solution_matrix(n, t); // file <<
+                // print_solution_matrix(A, t); // cout <<
+            }
         }
+        t.clear();
     }
     return;
 }
 
-void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
+void generate_A_matrix(int n, Matrix<int> X, Matrix<long double> B)
 {
     no_of_combinations = 0;
     after_check_1 = 0;
@@ -719,6 +733,15 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
+    // cout << omp_get_max_threads() << endl;
+
+    omp_set_num_threads(std::min(omp_get_max_threads(), 16));
+    omp_set_nested(1);            // Allow nested parallelism
+    omp_set_max_active_levels(2); // Limits to 2 levels of parallelism
+
+#ifdef _USING_OMP_
+#pragma omp parallel for schedule(dynamic) reduction(+ : no_of_combinations, after_check_1, after_check_2, after_check_3, after_check_4, after_check_5, non_zero_det_A, unique_sol_sys)
+#endif
     // for (int ones2 = 0; ones2 <= 0; ones2++)
     for (int ones2 = 1; ones2 <= (n * n) / 2; ones2++)
     {
@@ -726,11 +749,15 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
         long long int total_permutations1 = nCr(B.row() / 2, ones1);
         long long int total_permutations2 = nCr(B.row() / 2, ones2);
 
-        for (size_t permutation1 = 0; permutation1 < total_permutations1; permutation1++)
+#ifdef _USING_OMP_
+#pragma omp parallel for schedule(dynamic) reduction(+ : no_of_combinations, after_check_1, after_check_2, after_check_3, after_check_4, after_check_5, non_zero_det_A, unique_sol_sys)
+#endif
+        for (long long int permutation1 = 0; permutation1 < total_permutations1; permutation1++)
         {
+            // cout << omp_get_thread_num() << endl;
             vector<bool> mask1 = generate_permutation(B.row() / 2, ones1, permutation1);
 
-            for (size_t permutation2 = 0; permutation2 < total_permutations2; permutation2++)
+            for (long long int permutation2 = 0; permutation2 < total_permutations2; permutation2++)
             {
                 vector<bool> mask2 = generate_permutation(B.row() / 2, ones2, permutation2);
 
@@ -769,12 +796,11 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
 
                 after_check_5++;
                 // cout << after_check_5 << endl;
-                
 
                 // for (auto x : mask)
                 //     cout << x;
                 // cout << endl;
-                Matrix<double> A(0, n * n);
+                Matrix<long double> A(0, n * n);
                 for (size_t i = 0; i < mask.size(); ++i)
                 {
                     if (mask[i])
@@ -784,7 +810,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
                 }
 
                 solve_for_A(n, X, A);
-
+                A.clear();
             }
         }
         // cout << ones2 << " " << total_permutations1 << " " << total_permutations2 << endl;
@@ -794,6 +820,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
 
 int main()
 {
+    auto start = chrono::high_resolution_clock::now();
     try
     {
         long long int no_of_variables = 4;
@@ -809,19 +836,19 @@ int main()
         Matrix<int> X(static_cast<int>(pow(2, n - 1)), n); // X -> 2^(n) x (n)
         generate_X_matrix(n, X);
         cout << "HALF Matrix X::" << endl;
-        X.printToStdOut();
+        // X.printToStdOut();
 
         cout << "Generating matrix Y..." << endl;
         Matrix<int> Y(static_cast<int>(pow(2, n - 1)), n); // Y -> 2^(n-1) x (n)
         generate_Y_matrix(n, X, Y);
         cout << "Matrix Y::" << endl;
-        Y.printToStdOut();
+        // Y.printToStdOut();
 
         cout << "Generating matrix B..." << endl;
-        Matrix<double> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
+        Matrix<long double> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
         generate_B_matrix(n, X, Y, B);
         cout << "Matrix B::" << endl;
-        B.printToStdOut();
+        // B.printToStdOut();
         // printToStdOutWithCommas(B);
 
         cout << "Generating matrices A..." << endl;
@@ -840,6 +867,11 @@ int main()
     {
         cerr << "ERROR MESSAGE(in main()):: An exception occurred: " << e.what() << endl;
     }
+
+    auto end = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::nanoseconds>(end - start).count();
+    cout << "Execution Time: " << duration << " ns" << endl;
+    printMemoryUsage();
 
     return 0;
 }
