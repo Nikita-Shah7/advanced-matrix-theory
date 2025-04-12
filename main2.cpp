@@ -8,6 +8,7 @@ string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
+double FLOATING_POINT_ERROR = 0.001;
 
 void printMemoryUsage()
 {
@@ -112,7 +113,7 @@ void generate_Y_matrix(int n, const Matrix<int> X, Matrix<int> &Y)
     return;
 }
 
-void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<double> &B)
+void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<long double> &B)
 {
     for (size_t i = 0; i < B.row() / 2; i++)
     {
@@ -138,7 +139,7 @@ void generate_B_matrix(int n, const Matrix<int> X, const Matrix<int> Y, Matrix<d
     return;
 }
 
-void print_solution_matrix(int n, Matrix<double> t)
+void print_solution_matrix(int n, Matrix<long double> t)
 {
     string filename = SOLUTION_SET_FOLDER + "sol_set_" + to_string(n) + ".txt";
     // Open the file in append mode
@@ -158,7 +159,7 @@ void print_solution_matrix(int n, Matrix<double> t)
     file.close();
 }
 
-void print_solution_matrix(Matrix<int> A, Matrix<double> t)
+void print_solution_matrix(Matrix<long double> A, Matrix<long double> t)
 {
     std::cout << "[" << std::endl;
     for (unsigned i = 0; i < A.row(); ++i)
@@ -176,27 +177,27 @@ void print_solution_matrix(Matrix<int> A, Matrix<double> t)
 }
 
 // Create augmented matrix: [ A | 1 ]
-Matrix<double> matrix_augmentation(Matrix<double> A)
+Matrix<long double> matrix_augmentation(Matrix<long double> A)
 {
     int A_row = A.row();
     int A_col = A.col();
-    Matrix<double> augmented(A_row, A_col + 1);
+    Matrix<long double> augmented(A_row, A_col + 1);
 
     for (size_t i = 0; i < A_row; ++i)
     {
         for (size_t j = 0; j < A_col; ++j)
         {
-            augmented[i][j] = static_cast<double>(A[i][j]);
+            augmented[i][j] = static_cast<long double>(A[i][j]);
         }
-        augmented[i][A_col] = static_cast<double>(1);
+        augmented[i][A_col] = static_cast<long double>(1);
     }
     return augmented;
 }
 
-Matrix<double> gaussian_elimination(Matrix<double> A)
+Matrix<long double> gaussian_elimination(Matrix<long double> A)
 {
     size_t n = A.row();
-    Matrix<double> augmented = matrix_augmentation(A);
+    Matrix<long double> augmented = matrix_augmentation(A);
 
     // Forward Elimination with Partial Pivoting
     for (size_t i = 0; i < n; ++i)
@@ -236,7 +237,7 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
     }
 
     // Back Substitution
-    Matrix<double> t(n, 1);
+    Matrix<long double> t(n, 1);
     for (int i = n - 1; i >= 0; --i)
     {
         t[i][0] = augmented[i][n];
@@ -251,13 +252,13 @@ Matrix<double> gaussian_elimination(Matrix<double> A)
 }
 
 // Generate matrix T from t
-Matrix<double> generate_T_matrix(int n, Matrix<double> t)
+Matrix<long double> generate_T_matrix(int n, Matrix<long double> t)
 {
-    Matrix<double> T(0, n);
+    Matrix<long double> T(0, n);
 
     for (size_t i = 0; i < t.row();)
     {
-        vector<double> v;
+        vector<long double> v;
         for (size_t j = 0; j < n; j++, i++)
         {
             v.push_back(t[i][0]);
@@ -267,30 +268,30 @@ Matrix<double> generate_T_matrix(int n, Matrix<double> t)
     return T;
 }
 
-bool l1NormCondition(int n, Matrix<double> T, vector<int> x)
+bool l1NormCondition(int n, Matrix<long double> T, vector<int> x)
 {
-    Matrix<double> Tx(n, 1);
-	
-	for (size_t i = 0; i < n; ++i) 
-	{
-		double sum = 0;
-        for (size_t k = 0; k < n; ++k) 
+    Matrix<long double> Tx(n, 1);
+
+    for (size_t i = 0; i < n; ++i)
+    {
+        double sum = 0;
+        for (size_t k = 0; k < n; ++k)
         {
             sum += T[i][k] * x[k];
         }
         Tx[i][0] = sum;
-	}
+    }
 
-    return (Tx.l1Norm() <= 1);
+    return (Tx.l1Norm() <= (1 + FLOATING_POINT_ERROR));
 }
 
-bool check_condition_for_T(int n, Matrix<int> X, Matrix<double> t)
+bool check_condition_for_T(int n, Matrix<int> X, Matrix<long double> t)
 {
     if (t.size() == 0)
         return false;
 
     // Generate matrix T from t
-    Matrix<double> T = generate_T_matrix(n, t);
+    Matrix<long double> T = generate_T_matrix(n, t);
 
     for (size_t p = 0; p < X.row(); p++)
     {
@@ -300,7 +301,7 @@ bool check_condition_for_T(int n, Matrix<int> X, Matrix<double> t)
     return true;
 }
 
-void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
+void solve_for_A(int n, Matrix<int> X, Matrix<long double> A)
 {
     if (A.determinant() != 0)
     {
@@ -308,7 +309,7 @@ void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
 
         // printToStdOutWithCommas(A);
         // A.printToStdOut();
-        Matrix<double> t = gaussian_elimination(A);
+        Matrix<long double> t = gaussian_elimination(A);
         if (check_condition_for_T(n, X, t))
         {
             unique_sol_sys++;
@@ -321,17 +322,64 @@ void solve_for_A(int n, Matrix<int> X, Matrix<double> A)
     return;
 }
 
-bool linear_dependence_relations(int n, const Matrix<double> X)
+bool linear_dependence_relations(int n, const Matrix<long double> mat)
 {
-    int A_row = X.row();
-    int A_col = X.col();
-
-    Matrix<double> A_transpose = X.transpose();
-    Matrix<double> nullspace = A_transpose.kernel();
+    Matrix<long double> mat_transpose = mat.transpose();
+    Matrix<long double> nullspace = mat_transpose.kernel();
     // nullspace.printToStdOut();
     if (nullspace.isZero())
         return false;
     return true;
+}
+
+bool check_linear_dep_of_X(int n, vector<int> ind, Matrix<int> X)
+{
+    int A_row = X.row();
+
+    Matrix<long double> Adash(A_row, n);
+
+    for (size_t i = 0; i < A_row; ++i)
+    {
+        for (size_t j = 0; j < n; ++j)
+        {
+            Adash[i][j] = static_cast<long double>(X[i][j]);
+            Adash[i + A_row][j] = static_cast<long double>(-X[i][j]);
+        }
+    }
+    Matrix<long double> tmp(0, X.col());
+    for (auto i : ind)
+    {
+        tmp.push_back(Adash.getRowVector(i));
+    }
+
+    if (linear_dependence_relations(n, tmp))
+        return true;
+    return false;
+}
+
+bool check_linear_dep_of_Y(int n, vector<int> ind, Matrix<int> Y)
+{
+    int A_row = Y.row();
+
+    Matrix<long double> Adash(A_row, n);
+
+    for (size_t i = 0; i < A_row; ++i)
+    {
+        for (size_t j = 0; j < n; ++j)
+        {
+            Adash[i][j] = static_cast<long double>(Y[i][j]);
+        }
+    }
+
+    Matrix<long double> tmp(0, Y.col());
+    for (auto i : ind)
+    {
+        tmp.push_back(Adash.getRowVector(i));
+    }
+
+    if (linear_dependence_relations(n, tmp))
+        return true;
+    return false;
 }
 
 bool check_linear_dep_of_X_1(int n, vector<bool> mask)
@@ -430,7 +478,7 @@ bool check_linear_dep_of_Y_2(int n, vector<bool> mask)
 }
 
 // generate all possible combination sets from X each with n rows of X
-vector<vector<int>> generate_indep_for_X(int n)
+vector<vector<int>> generate_indep_for_X(int n, Matrix<int> X)
 {
     vector<vector<int>> x_indep_index;
 
@@ -456,6 +504,9 @@ vector<vector<int>> generate_indep_for_X(int n)
             if (mask_x[i])
                 tmp.push_back(i);
         }
+        if (check_linear_dep_of_X(n, tmp, X))
+            continue;
+
         x_indep_index.push_back(tmp);
     }
 
@@ -463,7 +514,7 @@ vector<vector<int>> generate_indep_for_X(int n)
 }
 
 // generate all possible combination sets from Y each with n rows of Y
-vector<vector<int>> generate_indep_for_Y(int n)
+vector<vector<int>> generate_indep_for_Y(int n, Matrix<int> Y)
 {
     vector<vector<int>> y_indep_index;
 
@@ -487,6 +538,9 @@ vector<vector<int>> generate_indep_for_Y(int n)
                 tmp.push_back(i);
         }
 
+        if (check_linear_dep_of_Y(n, tmp, Y))
+            continue;
+
         // // Now generate all permutations of the combination
         // do
         // {
@@ -498,14 +552,14 @@ vector<vector<int>> generate_indep_for_Y(int n)
     return y_indep_index;
 }
 
-void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
+void generate_A_matrix(int n, Matrix<int> X, Matrix<int> Y, Matrix<long double> B)
 {
     no_of_combinations = 0;
     non_zero_det_A = 0;
     unique_sol_sys = 0;
 
-    vector<vector<int>> x_indep_index = generate_indep_for_X(n);
-    vector<vector<int>> y_indep_index = generate_indep_for_Y(n);
+    vector<vector<int>> x_indep_index = generate_indep_for_X(n, X);
+    vector<vector<int>> y_indep_index = generate_indep_for_Y(n, Y);
 
     cout << x_indep_index.size() << " " << y_indep_index.size() << endl;
 
@@ -526,7 +580,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<double> B)
             no_of_combinations++;
             // cout << no_of_combinations << endl;
 
-            Matrix<double> A(0, n * n);
+            Matrix<long double> A(0, n * n);
             for (int j = 0; j < n; j++)
             {
                 int q = y_indep_index[y_indep_ind][j];
@@ -589,14 +643,14 @@ int main()
         // Y.printToStdOut();
 
         cout << "Generating matrix B..." << endl;
-        Matrix<double> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
+        Matrix<long double> B(static_cast<int>(pow(2, 2 * n - 1)), no_of_variables); // B -> (2^(2n - 1)) x (n ^ 2)
         generate_B_matrix(n, X, Y, B);
         cout << "Matrix B::" << endl;
         // B.printToStdOut();
-        Y.clear();
+        // Y.clear();
 
         cout << "Generating matrices A..." << endl;
-        generate_A_matrix(n, X, B);
+        generate_A_matrix(n, X, Y, B);
         B.clear();
 
         cout << "No. of combinations(when linearly independent rows of X and Y are considered):: " << no_of_combinations << endl;
