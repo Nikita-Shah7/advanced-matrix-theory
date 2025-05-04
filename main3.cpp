@@ -6,6 +6,9 @@ using namespace std;
 
 string SOLUTION_SET_FOLDER = "solution_set/";
 long long int no_of_combinations = 0;
+long long int after_check_1 = 0;
+long long int after_check_2 = 0;
+long long int after_check_3 = 0;
 long long int non_zero_det_A = 0;
 long long int unique_sol_sys = 0;
 double FLOATING_POINT_ERROR = 0.001;
@@ -330,6 +333,78 @@ bool check_condition_for_T(int n, Matrix<int> X, Matrix<long double> t)
     return true;
 }
 
+bool check_linear_dep_of_A_1(int n, vector<bool> mask)
+{
+    long long int step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+    for (long long int i = 0; i < step; i++)
+    {
+        if (mask[i] && mask[i + step])
+            return true;
+    }
+    return false;
+}
+
+bool check_linear_dep_of_A_helper(int idx, vector<bool> mask)
+{
+    // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+    if (idx >= (mask.size() / 2))
+    {
+        // cout << idx - (mask.size() / 2) << " ";
+        if ((mask[idx] == 1) || (mask[idx - (mask.size() / 2)] == 1))
+            return true;
+    }
+    else
+    {
+        // cout << idx << " ";
+        if ((mask[idx] == 1) || (mask[idx + (mask.size() / 2)] == 1))
+            return true;
+    }
+    return false;
+}
+
+bool check_linear_dep_of_A_2(int n, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+
+    for (long long int i = 0; i < mask.size() / 2; i += 4)
+    {
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1, mask) &&
+            check_linear_dep_of_A_helper(i + 2, mask) &&
+            check_linear_dep_of_A_helper(i + 3, mask))
+            return true;
+    }
+
+    return false;
+}
+
+bool check_linear_dep_of_A_3(int n, vector<bool> mask)
+{
+    if (n == 2)
+        return false;
+
+    // long long int next_half_step = pow(2, 2 * n - 2); // = B.row()/2 = mask.size()/2
+    long long int step = pow(2, n - 1);
+
+    for (long long int i = 0; i < ((mask.size() / 2) - (3 * step)); i++)
+    {
+        // p%2=0 should be satisfied where p is for pth row of X
+        long long int p = static_cast<int>(floor(((i) / pow(2, n - 1))));
+        if (p % 1)
+            continue;
+        if (check_linear_dep_of_A_helper(i, mask) &&
+            check_linear_dep_of_A_helper(i + 1 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 2 * step, mask) &&
+            check_linear_dep_of_A_helper(i + 3 * step, mask))
+            return true;
+    }
+
+    return false;
+}
+
 void solve_for_A(int n, Matrix<int> X, Matrix<long double> A)
 {
     // if (A.determinant() != 0)
@@ -649,8 +724,10 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<int> Y, Matrix<long double> 
     // vector<vector<int>> y_indep_index = {{0, 1}, {0, 2}, {0, 4}, {1, 3}, {1, 5}, {2, 6}, {4, 5}, {4, 6}, {5, 7}, {6, 7}};
     // vector<vector<int>> x_indep_index = {{0, 1, 3, 4, 7, 10, 13, 14}};
     // vector<vector<int>> y_indep_index = {{0, 1}, {0, 2}, {0, 4}, {1, 3}, {1, 5}, {2, 6}, {4, 5}, {4, 6}, {5, 7}, {6, 7}};
+    // vector<vector<int>> x_indep_index = {{0, 1, 2, 3, 4, 5, 14, 15}};
+    // vector<vector<int>> y_indep_index = {{0, 1}, {0, 2}, {0, 4}, {1, 3}, {2, 6}, {3, 7}, {4, 5}, {4, 6}, {5, 7}, {6, 7}};
     vector<vector<int>> x_indep_index = {{0, 1, 2, 3, 4, 5, 14, 15}};
-    vector<vector<int>> y_indep_index = {{0, 1}, {0, 2}, {0, 4}, {1, 3}, {2, 6}, {3, 7}, {4, 5}, {4, 6}, {5, 7}, {6, 7}};
+    vector<vector<int>> y_indep_index = {{0, 1}, {0, 4}, {1, 3}, {1, 5}, {2, 6}, {4, 6}, {5, 7}, {6, 7}};
 
     cout << x_indep_index.size() << " " << y_indep_index.size() << endl;
 
@@ -684,7 +761,7 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<int> Y, Matrix<long double> 
                 no_of_combinations++;
                 cout << no_of_combinations << endl;
 
-                Matrix<long double> A(0, n * n);
+                vector<bool> mask_A(B.row(), false);
                 for (int j = 0; j < x_indep_index[0].size(); j++)
                 {
                     int p = x_indep_index[x_indep_ind][j];
@@ -699,6 +776,33 @@ void generate_A_matrix(int n, Matrix<int> X, Matrix<int> Y, Matrix<long double> 
                             i = p * pow(2, n - 1) + q;
                         }
                         // cout << p << " " << q << " " << i << endl;
+                        mask_A[i] = true;
+                    }
+                }
+
+                if (check_linear_dep_of_A_1(n, mask_A))
+                    continue;
+
+                after_check_1++;
+                // cout << after_check_1 << endl;
+
+                if (check_linear_dep_of_A_2(n, mask_A))
+                    continue;
+
+                after_check_2++;
+                // cout << after_check_2 << endl;
+
+                if (check_linear_dep_of_A_3(n, mask_A))
+                    continue;
+
+                after_check_3++;
+                // cout << after_check_3 << endl;
+
+                Matrix<long double> A(0, n * n);
+                for (size_t i = 0; i < mask_A.size(); ++i)
+                {
+                    if (mask_A[i])
+                    {
                         A.push_back(B.getRowVector(i));
                     }
                 }
@@ -916,12 +1020,14 @@ int main()
         Matrix<int> X(static_cast<int>(pow(2, n)), n); // X -> 2^(n) x (n)
         generate_X_matrix(n, X);
         cout << "Matrix X::" << endl;
+        // X.printToStdOut();
         // printToStdOutWithCommas(X);
 
         cout << "Generating matrix Y..." << endl;
         Matrix<int> Y(static_cast<int>(pow(2, n)), n); // Y -> 2^(n-1) x (n)
         generate_Y_matrix(n, X, Y);
         cout << "Matrix Y::" << endl;
+        // Y.printToStdOut();
         // printToStdOutWithCommas(Y);
 
         cout << "Generating matrix B..." << endl;
@@ -937,7 +1043,11 @@ int main()
         generate_A_matrix(n, X, Y, B);
         B.clear();
 
-        cout << "No. of combinations(when linearly independent rows of X and Y are considered):: " << no_of_combinations << endl;
+        // cout << "No. of combinations(when linearly independent rows of X and Y are considered):: " << no_of_combinations << endl;
+        cout << "No. of combinations(when A might have linearly dependent rows):: " << no_of_combinations << endl;
+        cout << "No. of combinations(after check 1):: " << after_check_1 << endl;
+        cout << "No. of combinations(after check 2):: " << after_check_2 << endl;
+        cout << "No. of combinations(after check 3):: " << after_check_3 << endl;
         cout << "No. of combinations(when A has linearly independent rows i.e. det(A)!=0 ):: " << non_zero_det_A << endl;
         cout << "No. of combinations with unique solution:: " << unique_sol_sys << endl;
     }
